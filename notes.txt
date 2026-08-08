@@ -1,0 +1,16 @@
+src/prisma/prisma.module.ts
+src/prisma/prisma.service.ts
+Αυτά προσφέρουν κοινή πρόσβαση στη βάση μέσω dependency injection.
+
+Βασική δομή του AuthModule
+src/auth/auth.module.ts
+src/auth/auth.controller.ts
+src/auth/auth.service.ts
+src/auth/jwt.strategy.ts
+src/guards/jwt.auth.guard.ts
+src/auth/roles.decorator.ts
+src/auth/roles.guard.ts
+
+
+in backend
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
