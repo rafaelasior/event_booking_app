@@ -1,0 +1,13 @@
+<!--
+@if (user) {
+<div>
+  <h3>{{ user.username }}</h3>
+  <p>{{ user.firstName }} {{ user.lastName }}</p>
+</div>
+} -->
+@if (user){
+<div>
+  <h3>{{ user.username }}</h3>
+  <button (click)="deleteCurrent()">Διαγραφή</button>
+</div>
+}

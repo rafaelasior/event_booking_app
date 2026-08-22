@@ -1,0 +1,31 @@
+<div class="shell">
+  <header>
+    <h1>Angular Demo</h1>
+  </header>
+  <nav>
+  <a routerLink="/home" routerLinkActive="active">
+    Αρχική
+  </a>
+
+  <ng-container *ngIf="authState$ | async as authState">
+    <a *ngIf="authState.authenticated"
+       routerLink="/users"
+       routerLinkActive="active">
+      Χρήστες
+    </a>
+
+    <a *ngIf="!authState.authenticated"
+       routerLink="/login"
+       routerLinkActive="active">
+      Login
+    </a>
+
+    <button *ngIf="authState.authenticated"
+            type="button"
+            (click)="logout()">
+      Logout
+    </button>
+  </ng-container>
+</nav>
+  <router-outlet></router-outlet>
+</div>

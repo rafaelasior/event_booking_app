@@ -1,0 +1,25 @@
+<ol>
+  @for (user of users; track user.username) {
+    <li>
+      {{user.username}}
+    </li>
+  }
+</ol>
+
+<!--form [formGroup]="form" (ngSubmit)="save()">
+  <input formControlName="username">
+  <p *ngIf="form.controls['username'].invalid &&
+form.controls['username'].touched">
+    Το username είναι υποχρεωτικό.
+  </p>
+  <input formControlName="email">
+  <p *ngIf="form.controls['email'].hasError('email') &&
+form.controls['email'].touched">
+    Μη έγκυρο email.
+  </p>
+  <button type="submit" [disabled]="form.invalid">
+    Αποθήκευση
+  </button>
+</form-->
+
+

@@ -1,0 +1,5 @@
+<section *ngIf="user$ | async as user">
+  <h3>{{ user.username }}</h3>
+  <p>Email: {{ user.email }}</p>
+  <p>Roles: {{ user.roles.join(', ') }}</p>
+</section>
