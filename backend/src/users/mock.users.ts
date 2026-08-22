@@ -8,5 +8,6 @@ export const USERS: User[] = [
         passwordHash: '$2b$10$exampleHashForMaria',
         roles: ['user'],
         active: true,
+        registrationStatus: 'PENDING',
     },
 ];

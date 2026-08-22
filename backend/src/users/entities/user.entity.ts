@@ -1,8 +1,9 @@
 export class User {
-  id: number;
-  username: string;
-  email: string;
-  passwordHash: string;
-  roles: string[];
-  active: boolean;
+  id!: number;
+  username!: string;
+  email!: string;
+  passwordHash!: string;
+  roles!: string[];
+  active!: boolean;
+  registrationStatus!: string;
 }

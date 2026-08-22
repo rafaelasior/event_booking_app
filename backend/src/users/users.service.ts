@@ -18,12 +18,36 @@ export class UsersService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  create(createUserDto: CreateUserDto) {
-    throw new NotImplementedException(
-      'User' +
-        createUserDto.username +
-        'creation belongs to the registration flow',
-    );
+  async create(
+    createUserDto: CreateUserDto,
+    passwordHash: string,
+  ): Promise<PublicUserDto> {
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          username: createUserDto.username,
+          email: createUserDto.email,
+          passwordHash,
+          roles: ['user'],
+          active: true,
+          firstName: createUserDto.firstName,
+          lastName: createUserDto.lastName,
+          phone: createUserDto.phone,
+          address: createUserDto.address,
+          city: createUserDto.city,
+          country: createUserDto.country,
+          latitude: createUserDto.latitude,
+          longitude: createUserDto.longitude,
+          AFM: createUserDto.AFM,
+          // registrationStatus is intentionally omitted
+          // Prisma applies the default PENDING
+        },
+      });
+
+      return this.toPublicUser(user);
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
   }
 
   async findAll(): Promise<PublicUserDto[]> {
@@ -77,6 +101,7 @@ export class UsersService {
       username: user.username,
       email: user.email,
       roles: user.roles,
+      registrationStatus: user.registrationStatus,
     };
   }
 
@@ -100,5 +125,35 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
     throw error;
+  }
+
+  async approve(id: number): Promise<PublicUserDto> {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id },
+        data: {
+          registrationStatus: 'APPROVED',
+        },
+      });
+
+      return this.toPublicUser(user);
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
+  async reject(id: number): Promise<PublicUserDto> {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id },
+        data: {
+          registrationStatus: 'REJECTED',
+        },
+      });
+
+      return this.toPublicUser(user);
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
   }
 }

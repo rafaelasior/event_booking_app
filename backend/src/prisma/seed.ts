@@ -26,6 +26,16 @@ async function main() {
       passwordHash: adminPasswordHash,
       roles: ['admin'],
       active: true,
+      firstName: 'System',
+      lastName: 'Administrator',
+      phone: '0000000000',
+      address: 'System Address',
+      city: 'Athens',
+      country: 'Greece',
+      latitude: 37.9838,
+      longitude: 23.7275,
+      AFM: '000000000',
+      registrationStatus: 'APPROVED'
     },
   });
 
@@ -45,6 +55,15 @@ async function main() {
       passwordHash: userPasswordHash,
       roles: ['user'],
       active: true,
+      firstName: 'System',
+      lastName: 'Administrator',
+      phone: '0000000000',
+      address: 'System Address',
+      city: 'Athens',
+      country: 'Greece',
+      latitude: 37.9838,
+      longitude: 23.7275,
+      AFM: '000000001',
     },
   });
 

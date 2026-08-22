@@ -1,6 +1,7 @@
 export class PublicUserDto {
-  id: number;
-  username: string;
-  email: string;
-  roles: string[];
+  id!: number;
+  username!: string;
+  email!: string;
+  roles!: string[];
+  registrationStatus!: string;
 }

@@ -7,6 +7,7 @@ export const USERS: User[] = [
     passwordHash: '$2b$10$exampleHashForMaria',
     roles: ['user'],
     active: true,
+    registrationStatus: 'PENDING',
   },
   {
     id: 2,
@@ -15,5 +16,6 @@ export const USERS: User[] = [
     passwordHash: '$2b$10$exampleHashForAdmin',
     roles: ['admin'],
     active: true,
+    registrationStatus: 'APPROVED',
   },
 ];
