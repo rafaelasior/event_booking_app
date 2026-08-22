@@ -37,6 +37,9 @@ model User {
   registrationStatus RegistrationStatus @default(PENDING)
   organizedEvents    Event[]            @relation("EventOrganizer")
   bookings           Booking[]
+  sentMessages     Message[]
+  receivedMessages Message[]
+  eventViews       EventView[]
 }
 
 enum RegistrationStatus {
@@ -69,6 +72,10 @@ model Event {
   ticketTypes     TicketType[]
   eventCategories EventCategory[]
   bookings        Booking[]
+
+  photos   Photo[]
+  views    EventView[]
+  messages Message[]
 
   @@index([status])
   @@index([startDateTime])
@@ -126,6 +133,7 @@ model Booking {
   event      Event      @relation(fields: [eventId], references: [id])
   ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
   attendee   User       @relation(fields: [attendeeId], references: [id])
+  messages Message[]
 
   @@index([eventId])
   @@index([attendeeId])
@@ -135,4 +143,47 @@ enum BookingStatus {
   PENDING
   CONFIRMED
   CANCELLED
+}
+
+model Photo {
+  id       Int    @id @default(autoincrement())
+  eventId  Int
+  filePath String
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model Message {
+  id                Int      @id @default(autoincrement())
+  senderId          Int
+  receiverId        Int
+  eventId           Int?
+  bookingId         Int?
+  subject           String
+  content           String
+  isRead            Boolean  @default(false)
+  deletedBySender   Boolean  @default(false)
+  deletedByReceiver Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  sender   User     @relation("MessageSender", fields: [senderId], references: [id])
+  receiver User     @relation("MessageReceiver", fields: [receiverId], references: [id])
+  event    Event?   @relation(fields: [eventId], references: [id])
+  booking  Booking? @relation(fields: [bookingId], references: [id])
+
+  @@index([receiverId, isRead])
+  @@index([senderId])
+}
+
+model EventView {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  eventId  Int
+  viewedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([userId, viewedAt])
+  @@index([eventId])
 }
