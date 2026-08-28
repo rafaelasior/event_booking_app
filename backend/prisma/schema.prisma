@@ -37,9 +37,9 @@ model User {
   registrationStatus RegistrationStatus @default(PENDING)
   organizedEvents    Event[]            @relation("EventOrganizer")
   bookings           Booking[]
-  sentMessages     Message[]
-  receivedMessages Message[]
-  eventViews       EventView[]
+  sentMessages       Message[]          @relation("MessageSender")
+  receivedMessages   Message[]          @relation("MessageReceiver")
+  eventViews         EventView[]
 }
 
 enum RegistrationStatus {
@@ -133,7 +133,7 @@ model Booking {
   event      Event      @relation(fields: [eventId], references: [id])
   ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
   attendee   User       @relation(fields: [attendeeId], references: [id])
-  messages Message[]
+  messages   Message[]
 
   @@index([eventId])
   @@index([attendeeId])
