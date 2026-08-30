@@ -6,11 +6,11 @@ import {
 } from '@nestjs/common';
 import { Prisma, User as DbUser } from '../generated/prisma/client.mjs';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
-import { USERS } from './mock-users';
-import { PublicUserDto } from './dto/public-user.dto';
+import { CreateUserDto } from './dto/create-user.dto.js';
+import { UpdateUserDto } from './dto/update-user.dto.js';
+import { User } from './entities/user.entity.js';
+import { USERS } from './mock-users.js';
+import { PublicUserDto } from './dto/public-user.dto.js';
 
 @Injectable()
 export class UsersService {
