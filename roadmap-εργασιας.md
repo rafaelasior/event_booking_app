@@ -80,7 +80,7 @@
 
 ```bash
 cd backend
-npm install
+npm install  εγκαθαθιστά τα dependencies του project
 npx prisma generate
 npx prisma migrate dev
 npm run start:dev

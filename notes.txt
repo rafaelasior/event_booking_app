@@ -14,3 +14,23 @@ src/auth/roles.guard.ts
 
 in backend
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+
+----------------------------------------------------------------
+Μετά τα καινούρια backend και frontend:
+
+Για backend πιθανότατα να χρειαστούν:
+
+Μετά, τα κομμάτια που έχεις (auth, users, events, prisma) θα τα πρόσθετες σταδιακά με τη γεννήτρια, όχι copy-paste:
+
+
+nest g module auth && nest g controller auth && nest g service auth
+nest g module users && nest g controller users && nest g service users
+                            ή
+με την εντολή: nest g resource auth και nest g resource users <---- μελέτησέ το πριν το χρησιμοποιήσεις δίνει options να ξέρεις τι βάζεις κια γιατί
+
+Και το Prisma το προσθέτεις ξεχωριστά (δεν έρχεται με το nest CLI):
+
+npm install prisma --save-dev
+npm install @prisma/client
+npx prisma init
+Αυτό είναι το σημείο που θα έφτιαχνες .env/.env.example από την αρχή

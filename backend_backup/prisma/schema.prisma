@@ -12,6 +12,18 @@ generator client {
   importFileExtension    = "mjs"
 }
 
+//Να το κάνω έτσι γτ όπως είναι εδώ θα σκάσει
+//generator client {
+//  provider     = "prisma-client"
+//  output       = "../src/generated/prisma"
+//  moduleFormat = "cjs"
+//}
+
+//datasource db {
+//  provider = "postgresql"
+//  url      = env("DATABASE_URL")
+//}
+
 datasource db {
   provider = "postgresql"
 }
