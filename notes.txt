@@ -53,3 +53,6 @@ ng new frontend --standalone=false
 
 ng generate component users-component
 ng generate service auth/auth
+
+Για prisma:
+npx prisma dev για τοπική postgres
