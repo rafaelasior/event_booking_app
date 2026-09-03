@@ -58,3 +58,9 @@ ng generate service auth/auth
 docker compose up -d
 npx migrate dev --name name_description
 npx prisma studio --port 5555
+
+
+Users:
+
+εκανα nest g resource users.
+Μάλλον θα χρειαστεί να φτιάξω prisma module
