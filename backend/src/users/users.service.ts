@@ -1,26 +1,132 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma, User as DbUser } from '../generated/prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { PublicUserDto } from './dto/public-user.dto';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(private readonly prisma: PrismaService) {}
+
+  private toPublicUser(user: DbUser): PublicUserDto {
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      roles: user.roles,
+      registrationStatus: user.registrationStatus,
+    };
   }
 
-  findAll() {
-    return `This action returns all users`;
+  private handlePrismaError(error: unknown): never {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      throw new ConflictException('Username, email or AFM already exists');
+    }
+
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      throw new NotFoundException('User not found');
+    }
+
+    throw error;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async create(
+    createUserDto: CreateUserDto,
+    passwordHash: string,
+  ): Promise<PublicUserDto> {
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          username: createUserDto.username,
+          email: createUserDto.email,
+          passwordHash,
+          roles: ['user'],
+          active: true,
+          firstName: createUserDto.firstName,
+          lastName: createUserDto.lastName,
+          phone: createUserDto.phone,
+          address: createUserDto.address,
+          city: createUserDto.city,
+          country: createUserDto.country,
+          latitude: createUserDto.latitude,
+          longitude: createUserDto.longitude,
+          AFM: createUserDto.AFM,
+        },
+      });
+
+      return this.toPublicUser(user);
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  // επιστρεφει μόνο τους ενεργούς χρήστες (active: true) και τους ταξινομεί κατά αύξουσα σειρά id
+  async findAll(): Promise<PublicUserDto[]> {
+    const users = await this.prisma.user.findMany({
+      where: { active: true },
+      orderBy: { id: 'asc' },
+    });
+
+    return users.map((user) => this.toPublicUser(user));
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  // επιστρέφει μόνο τον ενεργό χρήστη με το συγκεκριμένο id (active: true)
+  async findOne(id: number): Promise<PublicUserDto> {
+    const user = await this.prisma.user.findFirst({
+      where: { id, active: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.toPublicUser(user);
+  }
+
+  async update(
+    id: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<PublicUserDto> {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id },
+        data: updateUserDto,
+      });
+
+      return this.toPublicUser(user);
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
+  async remove(id: number): Promise<PublicUserDto> {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id },
+        data: { active: false },
+      });
+
+      return this.toPublicUser(user);
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
+  // επιστρέφει ολόκληρο το database user object.
+  async findInternalByUsername(username: string): Promise<DbUser | null> {
+    return this.prisma.user.findFirst({
+      where: { username, active: true },
+    });
   }
 }
