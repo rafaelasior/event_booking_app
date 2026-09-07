@@ -86,7 +86,7 @@ Dependencies:
 - Δημιουργία χρήστη από εσωτερική λογική register.
 - Ενημέρωση χρήστη.
 - Soft delete με `active: false`.
-- Μελλοντικά admin approval/rejection.
+- Admin approval/rejection.
 
 Συνδέεται με:
 
@@ -102,6 +102,8 @@ Dependencies:
 - `findOne(id)`: επιστρέφει έναν ενεργό χρήστη ή 404.
 - `update(id, updateUserDto)`: ενημερώνει χρήστη.
 - `remove(id)`: κάνει soft delete με `active: false`.
+- `approve(id)`: αλλάζει `registrationStatus` σε `APPROVED`.
+- `reject(id)`: αλλάζει `registrationStatus` σε `REJECTED`.
 - `findInternalByUsername(username)`: βρίσκει πλήρη user για εσωτερική χρήση από auth.
 
 Γιατί υπάρχει το `findInternalByUsername`:
@@ -120,14 +122,17 @@ Dependencies:
 - `backend/src/auth/dto/login.dto.ts`
 - `backend/src/auth/jwt.payload.ts`
 - `backend/src/auth/jwt.strategy.ts`
+- `backend/src/auth/roles.decorator.ts`
+- `backend/src/auth/roles.guard.ts`
+- `backend/src/guards/jwt-auth/jwt-auth.guard.ts`
 
 Σκοπός:
 
 - Register νέου χρήστη.
 - Login με username/password.
 - Δημιουργία JWT.
-- Προετοιμασία για έλεγχο προστατευμένων routes.
-- Προετοιμασία για έλεγχο admin/user roles.
+- Έλεγχος προστατευμένων routes με JWT.
+- Έλεγχος admin/user roles.
 
 Υλοποιημένα endpoints:
 
@@ -159,14 +164,24 @@ Dependencies:
 - `JwtPayload`: ορίζει τι μπαίνει μέσα στο token.
 - `JwtStrategy`: διαβάζει `Authorization: Bearer <token>` και γεμίζει
   `request.user` με `userId`, `username`, `roles`.
+- `JwtAuthGuard`: προστατεύει endpoints που απαιτούν valid JWT.
 
-Λείπουν ακόμα για ολοκλήρωση auth/authorization:
+Υλοποιημένα για roles/admin authorization:
 
-- `JwtAuthGuard`
-- `Roles` decorator
-- `RolesGuard`
-- Προστασία admin endpoints στο `UsersController`
-- `approve` / `reject` users στο `UsersService` και `UsersController`
+- `Roles` decorator: δηλώνει ποια roles χρειάζεται ένα endpoint.
+- `RolesGuard`: διαβάζει το `@Roles(...)` metadata και ελέγχει
+  `request.user.roles`.
+- `GET /users`: προστατεύεται με JWT και απαιτεί role `admin`.
+- `PATCH /users/:id/approve`: προστατεύεται με JWT και απαιτεί role `admin`.
+- `PATCH /users/:id/reject`: προστατεύεται με JWT και απαιτεί role `admin`.
+
+Τι χρειάζεται ακόμα για verification:
+
+- Runtime test με πραγματική βάση.
+- Register νέου user και επιβεβαίωση ότι γίνεται `PENDING`.
+- Login pending/rejected user και επιβεβαίωση ότι κόβεται.
+- Login approved/admin user και επιβεβαίωση ότι επιστρέφει JWT.
+- Κλήση admin endpoints με/χωρίς admin token.
 
 ### EventsModule
 
@@ -244,15 +259,14 @@ Enums:
 
 ## Επόμενο Μικρό Βήμα
 
-Συνέχεια στο backend authorization:
+Verification του backend authentication/authorization:
 
-1. Φτιάχνουμε `JwtAuthGuard`.
-2. Φτιάχνουμε `Roles` decorator.
-3. Φτιάχνουμε `RolesGuard`.
-4. Προσθέτουμε `approve` / `reject` στο `UsersService`.
-5. Προσθέτουμε admin endpoints στο `UsersController`.
-6. Κάνουμε build.
-7. Τεστάρουμε register/login/approve με curl.
+1. Κάνουμε `npm run build`.
+2. Βεβαιωνόμαστε ότι υπάρχει σωστό `.env` με `DIRECT_DATABASE_URL` και `JWT_SECRET`.
+3. Τρέχουμε migrations/seed αν χρειάζεται.
+4. Ξεκινάμε backend με `npm run start:dev`.
+5. Τεστάρουμε register/login/approve με curl.
+6. Μετά περνάμε στο πρώτο πραγματικό `EventsService` implementation.
 
 ## Debug Checklist
 

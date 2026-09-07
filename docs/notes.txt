@@ -1,16 +1,23 @@
-src/prisma/prisma.module.ts
-src/prisma/prisma.service.ts
-Αυτά προσφέρουν κοινή πρόσβαση στη βάση μέσω dependency injection.
+---------------------
 
-Βασική δομή του AuthModule
-src/auth/auth.module.ts
-src/auth/auth.controller.ts
-src/auth/auth.service.ts
-src/auth/jwt.strategy.ts
-src/guards/jwt.auth.guard.ts
-src/auth/roles.decorator.ts
-src/auth/roles.guard.ts
+DTO = Data Transfer Object
 
+JWT = JSON Web Token 
+    Είναι ένα string που παίρνει ο χρήστης όταν κάνει login σωστά.
+    1. User κάνει login
+    2. Backend ελέγχει password
+    3. Backend επιστρέφει JWT
+    4. Frontend κρατάει το JWT
+    5. Σε κάθε protected request, frontend στέλνει:
+    Authorization: Bearer <token>
+
+    401 Unauthorized = δεν είσαι logged in / δεν έχεις σωστό token
+    403 Forbidden = είσαι logged in, αλλά δεν έχεις δικαίωμα
+
+    Το JWT_SECRET είναι ένα για όλο το backend, όχι ένα ανά χρήστη.
+    Επειδή δεν είναι password χρήστη. Είναι το κλειδί του server για να υπογράφει tokens.
+
+---------------------
 
 in backend
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash

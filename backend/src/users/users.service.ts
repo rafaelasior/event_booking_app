@@ -123,6 +123,38 @@ export class UsersService {
     }
   }
 
+  // αλλάζει το registrationStatus του χρήστη σε 'APPROVED' αφού έχει γίνει έλεγχος των στοιχείων του από τον admin.
+  async approve(id: number): Promise<PublicUserDto> {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id },
+        data: {
+          registrationStatus: 'APPROVED',
+        },
+      });
+
+      return this.toPublicUser(user);
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
+  // αλλάζει το registrationStatus του χρήστη σε 'REJECTED' αφού έχει γίνει έλεγχος των στοιχείων του από τον admin.
+  async reject(id: number): Promise<PublicUserDto> {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id },
+        data: {
+          registrationStatus: 'REJECTED',
+        },
+      });
+
+      return this.toPublicUser(user);
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
   // επιστρέφει ολόκληρο το database user object.
   async findInternalByUsername(username: string): Promise<DbUser | null> {
     return this.prisma.user.findFirst({
