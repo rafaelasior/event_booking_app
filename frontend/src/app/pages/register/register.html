@@ -1,0 +1,76 @@
+<main class="auth-page">
+  <section class="auth-panel">
+    <a routerLink="/" class="back-link">Back</a>
+
+    <h1>Create account</h1>
+    <p>Submit your registration request for admin approval.</p>
+
+    <form (ngSubmit)="submitRegister()">
+        <!-- ngSubmit είναι Angular event για submit φόρμας.   -->
+      <div class="form-grid">
+        <label>
+          Username
+          <input type="text" name="username" autocomplete="username" [(ngModel)]="form.username" />
+          <!-- This will bind the input value to the username property in the form object ό,τι γράφεις στο input πηγαίνει στο form.username και αν αλλάξει το form.username, ενημερώνεται το input -->
+        </label>
+
+        <label>
+          Email
+          <input type="email" name="email" autocomplete="email" [(ngModel)]="form.email" />
+        </label>
+
+        <label>
+          Password
+          <input type="password" name="password" autocomplete="new-password" [(ngModel)]="form.password" />
+        </label>
+
+        <label>
+          Confirm password
+          <input type="password" name="passwordConfirmation" autocomplete="new-password" [(ngModel)]="form.passwordConfirmation" />
+        </label>
+
+        <label>
+          First name
+          <input type="text" name="firstName" autocomplete="given-name" [(ngModel)]="form.firstName" />
+        </label>
+
+        <label>
+          Last name
+          <input type="text" name="lastName" autocomplete="family-name" [(ngModel)]="form.lastName" />
+        </label>
+
+        <label>
+          Phone
+          <input type="tel" name="phone" autocomplete="tel" [(ngModel)]="form.phone" />
+        </label>
+
+        <label>
+          AFM
+          <input type="text" name="AFM" [(ngModel)]="form.AFM" />
+        </label>
+
+        <label class="full-row">
+          Address
+          <input type="text" name="address" autocomplete="street-address" [(ngModel)]="form.address" />
+        </label>
+
+        <label>
+          City
+          <input type="text" name="city" autocomplete="address-level2" [(ngModel)]="form.city" />
+        </label>
+
+        <label>
+          Country
+          <input type="text" name="country" autocomplete="country-name" [(ngModel)]="form.country" />
+        </label>
+      </div>
+
+      <button type="submit">Register</button>
+    </form>
+
+    <p class="switch-text">
+      Already have an account?
+      <a routerLink="/login">Login</a>
+    </p>
+  </section>
+</main>

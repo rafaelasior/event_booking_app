@@ -1,0 +1,27 @@
+<main class="auth-page">
+  <section class="auth-panel">
+    <a routerLink="/" class="back-link">Back</a>
+
+    <h1>Login</h1>
+    <p>Sign in to manage events and bookings.</p>
+
+    <form (ngSubmit)="submitLogin()">
+      <label>
+        Username
+        <input type="text" name="username" autocomplete="username" [(ngModel)]="form.username" />
+      </label>
+
+      <label>
+        Password
+        <input type="password" name="password" autocomplete="current-password" [(ngModel)]="form.password" />
+      </label>
+
+      <button type="submit">Login</button>
+    </form>
+
+    <p class="switch-text">
+      Need an account?
+      <a routerLink="/register">Register</a>
+    </p>
+  </section>
+</main>
