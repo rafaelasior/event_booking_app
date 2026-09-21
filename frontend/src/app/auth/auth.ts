@@ -40,4 +40,20 @@ export class Auth {
   register(data: RegisterRequest): Observable<unknown> {
     return this.http.post(`${this.apiUrl}/register`, data);
   }
+
+  saveToken(token: string) {
+    localStorage.setItem('access_token', token);
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem('access_token');
+  }
+
+  logout() {
+    localStorage.removeItem('access_token');
+  }
+
+  isLoggedIn(): boolean {
+    return this.getToken() !== null;
+  }
 }

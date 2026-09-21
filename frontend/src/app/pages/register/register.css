@@ -86,6 +86,11 @@ button:hover {
   background: #1a49ad;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .switch-text {
   margin-top: 22px;
   text-align: center;
@@ -93,6 +98,16 @@ button:hover {
 
 .switch-text a {
   color: #2257c8;
+  font-weight: 700;
+}
+
+.success-message {
+  color: #116329;
+  font-weight: 700;
+}
+
+.error-message {
+  color: #b42318;
   font-weight: 700;
 }
 

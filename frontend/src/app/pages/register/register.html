@@ -5,63 +5,79 @@
     <h1>Create account</h1>
     <p>Submit your registration request for admin approval.</p>
 
-    <form (ngSubmit)="submitRegister()">
+    @if (message()) {
+      <p class="success-message">{{ message() }}</p>
+    }
+
+    @if (errorMessage()) {
+      <p class="error-message">{{ errorMessage() }}</p>
+    }
+
+    @if (errorMessages().length) {
+      <ul class="error-message">
+        @for (error of errorMessages(); track error) {
+          <li>{{ error }}</li>
+        }
+      </ul>
+    }
+
+    <form #registerForm="ngForm" (ngSubmit)="submitRegister(registerForm.valid)">
         <!-- ngSubmit είναι Angular event για submit φόρμας.   -->
       <div class="form-grid">
         <label>
           Username
-          <input type="text" name="username" autocomplete="username" [(ngModel)]="form.username" />
+          <input required type="text" name="username" autocomplete="username" [(ngModel)]="form.username" />
           <!-- This will bind the input value to the username property in the form object ό,τι γράφεις στο input πηγαίνει στο form.username και αν αλλάξει το form.username, ενημερώνεται το input -->
         </label>
 
         <label>
           Email
-          <input type="email" name="email" autocomplete="email" [(ngModel)]="form.email" />
+          <input required type="email" name="email" autocomplete="email" [(ngModel)]="form.email" />
         </label>
 
         <label>
           Password
-          <input type="password" name="password" autocomplete="new-password" [(ngModel)]="form.password" />
+          <input required type="password" name="password" autocomplete="new-password" [(ngModel)]="form.password" />
         </label>
 
         <label>
           Confirm password
-          <input type="password" name="passwordConfirmation" autocomplete="new-password" [(ngModel)]="form.passwordConfirmation" />
+          <input required type="password" name="passwordConfirmation" autocomplete="new-password" [(ngModel)]="form.passwordConfirmation" />
         </label>
 
         <label>
           First name
-          <input type="text" name="firstName" autocomplete="given-name" [(ngModel)]="form.firstName" />
+          <input required type="text" name="firstName" autocomplete="given-name" [(ngModel)]="form.firstName" />
         </label>
 
         <label>
           Last name
-          <input type="text" name="lastName" autocomplete="family-name" [(ngModel)]="form.lastName" />
+          <input required type="text" name="lastName" autocomplete="family-name" [(ngModel)]="form.lastName" />
         </label>
 
         <label>
           Phone
-          <input type="tel" name="phone" autocomplete="tel" [(ngModel)]="form.phone" />
+          <input required type="tel" name="phone" autocomplete="tel" [(ngModel)]="form.phone" />
         </label>
 
         <label>
           AFM
-          <input type="text" name="AFM" [(ngModel)]="form.AFM" />
+          <input required type="text" name="AFM" [(ngModel)]="form.AFM" />
         </label>
 
         <label class="full-row">
           Address
-          <input type="text" name="address" autocomplete="street-address" [(ngModel)]="form.address" />
+          <input required type="text" name="address" autocomplete="street-address" [(ngModel)]="form.address" />
         </label>
 
         <label>
           City
-          <input type="text" name="city" autocomplete="address-level2" [(ngModel)]="form.city" />
+          <input required type="text" name="city" autocomplete="address-level2" [(ngModel)]="form.city" />
         </label>
 
         <label>
           Country
-          <input type="text" name="country" autocomplete="country-name" [(ngModel)]="form.country" />
+          <input required type="text" name="country" autocomplete="country-name" [(ngModel)]="form.country" />
         </label>
       </div>
 

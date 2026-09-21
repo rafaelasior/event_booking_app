@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Auth } from '../../auth/auth';
 
 @Component({
   selector: 'app-login',
@@ -13,8 +14,17 @@ export class Login {
     username: '',
     password: '',
   };
+  constructor(private readonly auth: Auth) {}
 
   submitLogin() {
-    console.log('login form:', this.form);
+    this.auth.login(this.form).subscribe({
+      next: (response) => {
+        this.auth.saveToken(response.access_token);
+        console.log('login success:', response);
+      },
+      error: (error) => {
+        console.error('login failed:', error);
+      },
+    });
   }
 }
