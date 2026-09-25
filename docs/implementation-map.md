@@ -177,11 +177,17 @@ Dependencies:
 
 Τι χρειάζεται ακόμα για verification:
 
-- Runtime test με πραγματική βάση.
-- Register νέου user και επιβεβαίωση ότι γίνεται `PENDING`.
-- Login pending/rejected user και επιβεβαίωση ότι κόβεται.
-- Login approved/admin user και επιβεβαίωση ότι επιστρέφει JWT.
-- Κλήση admin endpoints με/χωρίς admin token.
+- Έγινε runtime test με πραγματική βάση.
+- Το admin login δουλεύει με seed user και επιστρέφει JWT.
+- Το register από frontend καλεί `POST /auth/register`.
+- Τα backend validation errors επιστρέφονται στο frontend.
+- Τα προστατευμένα/admin endpoints έχουν JWT/roles guards.
+
+Known caveats:
+
+- Τα automated tests δεν έχουν καθαριστεί ακόμα μετά τις αλλαγές.
+- Υπάρχουν npm audit warnings που αποφασίστηκε να μείνουν προσωρινά μέχρι
+  συζήτηση με την ομάδα.
 
 ### EventsModule
 
@@ -244,29 +250,56 @@ Enums:
 Τρέχουσα κατάσταση:
 
 - Angular project υπάρχει.
-- Δεν υπάρχει ακόμα πραγματικό UI της εργασίας.
-- Τα routes είναι ακόμα άδεια.
+- Υπάρχει αρχικό UI για welcome, login και register.
+- Τα βασικά routes είναι συνδεδεμένα.
+- Το login καλεί backend και αποθηκεύει JWT στο `localStorage`.
+- Το register καλεί backend και εμφανίζει success/error messages.
+- Τα register messages χρησιμοποιούν Angular `signal`, επειδή το project
+  δουλεύει με zoneless change detection.
+
+Αρχεία:
+
+- `frontend/src/app/app.routes.ts`
+- `frontend/src/app/app.html`
+- `frontend/src/app/app.config.ts`
+- `frontend/src/app/auth/auth.ts`
+- `frontend/src/app/pages/welcome/*`
+- `frontend/src/app/pages/login/*`
+- `frontend/src/app/pages/register/*`
+
+Routes:
+
+- `/`: welcome page.
+- `/login`: login page.
+- `/register`: register page.
+
+Υλοποιημένα στο `Auth` frontend service:
+
+- `login(data)`: καλεί `POST /auth/login`.
+- `register(data)`: καλεί `POST /auth/register`.
+- `saveToken(token)`: αποθηκεύει JWT στο `localStorage`.
+- `getToken()`: διαβάζει JWT.
+- `logout()`: αφαιρεί JWT.
+- `isLoggedIn()`: ελέγχει αν υπάρχει token.
 
 Μελλοντική σειρά:
 
-1. Welcome page.
-2. Register page.
-3. Login page.
-4. Auth service που καλεί backend.
-5. JWT storage/interceptor.
-6. Admin users page.
-7. Event browsing/management pages.
+1. Frontend validation στο register, ίδιο με backend κανόνες.
+2. Admin users page για approve/reject pending users.
+3. JWT interceptor για protected requests.
+4. Auth guard στο frontend για protected pages.
+5. User/admin dashboard μετά το login.
+6. Event browsing/management pages.
+7. Booking flow.
 
 ## Επόμενο Μικρό Βήμα
 
-Verification του backend authentication/authorization:
+Πρώτο επόμενο βήμα:
 
-1. Κάνουμε `npm run build`.
-2. Βεβαιωνόμαστε ότι υπάρχει σωστό `.env` με `DIRECT_DATABASE_URL` και `JWT_SECRET`.
-3. Τρέχουμε migrations/seed αν χρειάζεται.
-4. Ξεκινάμε backend με `npm run start:dev`.
-5. Τεστάρουμε register/login/approve με curl.
-6. Μετά περνάμε στο πρώτο πραγματικό `EventsService` implementation.
+1. Ολοκληρώνουμε το frontend validation στο register.
+2. Φτιάχνουμε admin users page για να βλέπει ο admin pending users.
+3. Συνδέουμε approve/reject buttons με τα admin backend endpoints.
+4. Μετά περνάμε στο πρώτο πραγματικό `EventsService` implementation.
 
 ## Debug Checklist
 
