@@ -10,12 +10,16 @@ import { UpdateEventDto } from './dto/update-event.dto';
 import { EventStatus } from '../generated/prisma/client';
 import { CreateTicketTypeDto } from './dto/create-ticket-type.dto';
 import { UpdateTicketTypeDto } from './dto/update-ticket-type.dto';
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { SetEventCategoriesDto } from './dto/set-event-categories.dto';
+import { CreatePhotoDto } from './dto/create-photo.dto';
 
 type EventFilters = {
   status?: string;
   city?: string;
   eventType?: string;
   search?: string;
+  categoryId?: string;
 };
 
 type CurrentUser = {
@@ -28,6 +32,10 @@ type CurrentUser = {
 @Injectable()
 export class EventsService {
   constructor(private readonly prisma: PrismaService) {}
+
+// ------------------------------------------------------------------------------------
+//  PRIVATE HELPER METHODS
+// ------------------------------------------------------------------------------------
 
   // Validate that the provided status is a valid EventStatus enum value
   private parseStatus(status?: string): EventStatus | undefined {
@@ -54,13 +62,27 @@ export class EventsService {
 
   // Ensure that the current user is either an admin or the organizer of the event
   private ensureCanManageEvent(event: { organizerId: number }, user: CurrentUser) {
-      const isAdmin = user.roles.includes('admin');
-      const isOrganizer = event.organizerId === user.userId;
+    const isAdmin = user.roles.includes('admin');
+    const isOrganizer = event.organizerId === user.userId;
 
-      if (!isAdmin && !isOrganizer) {
-        throw new ForbiddenException('You cannot manage this event');
-      }
+    if (!isAdmin && !isOrganizer) {
+      throw new ForbiddenException('You cannot manage this event');
     }
+  }
+
+  private ensureEventIsEditable(event: { status: EventStatus }) {
+    if (event.status === EventStatus.CANCELLED) {
+      throw new BadRequestException('Cancelled events cannot be changed');
+    }
+
+    if (event.status === EventStatus.COMPLETED) {
+      throw new BadRequestException('Completed events cannot be changed');
+    }
+  }
+
+// ------------------------------------------------------------------------------------
+//  EVENTS
+// ------------------------------------------------------------------------------------
 
   async create(createEventDto: CreateEventDto, organizerId: number) {
     this.validateDateRange(
@@ -102,12 +124,26 @@ export class EventsService {
               },
             }
           : {}),
+        ...(filters.categoryId
+          ? {
+              eventCategories: {
+                some: {
+                  categoryId: Number(filters.categoryId), //φέρε events όπου υπάρχει έστω μία eventCategory με categoryId = X
+                },
+              },
+            }
+          : {}),
       },
       include: {    // μαζι με στοιχεία του οργανωτή τους (οχι όλα τα στοιχεία) 
         organizer: {
           select: {
             id: true,
             username: true,
+          },
+        },
+        eventCategories: {
+          include: {
+            category: true, // περιλαμβάνει τα στοιχεία της κατηγορίας
           },
         },
       },
@@ -126,6 +162,11 @@ export class EventsService {
       include: {
         ticketTypes: true,
         photos: true,
+        eventCategories: {
+          include: {
+            category: true,
+          },
+        },
       },
       orderBy: {
         updatedAt: 'desc',
@@ -144,8 +185,13 @@ export class EventsService {
             username: true,
           },
         },
-        ticketTypes: true, // συμπεριλαμβάνει τα tickets types που ανήκουν στο event
-        photos: true, // συμπεριλαμβάνει τις φωτογραφίες που ανήκουν στο event
+        ticketTypes: true, 
+        photos: true, 
+        eventCategories: {
+          include: {
+            category: true, 
+          },
+        },
       },
     });
     
@@ -167,6 +213,7 @@ export class EventsService {
     }
 
     this.ensureCanManageEvent(event, user);
+    this.ensureEventIsEditable(event);
 
     // αν υπάρχει update χρησιμοποιησε το, αλλιώς κράτα το παλιό 
     const nextStartDate = updateEventDto.startDateTime ?? event.startDateTime;
@@ -203,6 +250,7 @@ export class EventsService {
     }
 
     this.ensureCanManageEvent(event, user);
+    this.ensureEventIsEditable(event);
     this.validateDateRange(event.startDateTime, event.endDateTime);
 
     if (event.capacity <= event.reservedSeats) {
@@ -228,6 +276,15 @@ export class EventsService {
 
     this.ensureCanManageEvent(event, user);
 
+    // Έλεγχος αν το event έχει ήδη ολοκληρωθεί ή ακυρωθεί
+    if (event.status === EventStatus.COMPLETED) {
+      throw new BadRequestException('Completed events cannot be cancelled');
+    }
+
+    if (event.status === EventStatus.CANCELLED) {
+      throw new BadRequestException('Event is already cancelled');
+    }
+
     return this.prisma.event.update({
       where: { id },
       data: {
@@ -235,6 +292,10 @@ export class EventsService {
       },
     });
   }
+
+// ------------------------------------------------------------------------------------
+//  TICKETS
+// ------------------------------------------------------------------------------------
 
   // Create a new ticket type for a specific event, ensuring that the user has permission to manage the event
   async createTicketType(
@@ -280,6 +341,7 @@ export class EventsService {
     }
 
     this.ensureCanManageEvent(event, user);
+    this.ensureEventIsEditable(event);
 
     // Eλέγχει οτι υπαρχει ticket type και οτι ανήκει στο συγκεκριμένο event
     const ticketType = await this.prisma.ticketType.findFirst({
@@ -343,6 +405,7 @@ export class EventsService {
     }
 
     this.ensureCanManageEvent(event, user);
+    this.ensureEventIsEditable(event);
 
     const ticketType = await this.prisma.ticketType.findFirst({
       where: {
@@ -362,7 +425,131 @@ export class EventsService {
     });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} event`;
+// ------------------------------------------------------------------------------------
+//  CATEGORIES
+// ------------------------------------------------------------------------------------
+
+  async findCategories() {
+    return this.prisma.category.findMany({
+      orderBy: {
+        name: 'asc',
+      },
+    });
   }
+
+  async createCategory(createCategoryDto: CreateCategoryDto) {
+    return this.prisma.category.create({
+      data: {
+        name: createCategoryDto.name,
+      },
+    });
+  }
+
+  async setEventCategories(
+    eventId: number,
+    setEventCategoriesDto: SetEventCategoriesDto,
+    user: CurrentUser,
+  ) {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    this.ensureCanManageEvent(event, user);
+    this.ensureEventIsEditable(event);
+
+    const categories = await this.prisma.category.findMany({
+      where: {
+        id: {
+          in: setEventCategoriesDto.categoryIds,
+        },
+      },
+    });
+
+    if (categories.length !== setEventCategoriesDto.categoryIds.length) {
+      throw new BadRequestException('One or more categories do not exist');
+    }
+
+    await this.prisma.eventCategory.deleteMany({
+      where: {
+        eventId,
+      },
+    });
+
+    await this.prisma.eventCategory.createMany({
+      data: setEventCategoriesDto.categoryIds.map((categoryId) => ({
+        eventId,
+        categoryId,
+      })),
+    });
+
+    return this.findOne(eventId);
+  }
+
+// ------------------------------------------------------------------------------------
+//  PHOTOS
+// ------------------------------------------------------------------------------------
+
+  // Add a photo to a specific event, ensuring that the user has permission to manage the event
+  async addPhoto(
+    eventId: number,
+    createPhotoDto: CreatePhotoDto,
+    user: CurrentUser,
+  ) {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    this.ensureCanManageEvent(event, user);
+    this.ensureEventIsEditable(event);
+
+    return this.prisma.photo.create({
+      data: {
+        eventId,
+        filePath: createPhotoDto.filePath,
+      },
+    });
+  }
+
+  async deletePhoto(
+    eventId: number,
+    photoId: number,
+    user: CurrentUser,
+  ) {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    this.ensureCanManageEvent(event, user);
+    this.ensureEventIsEditable(event);
+
+    const photo = await this.prisma.photo.findFirst({
+      where: {
+        id: photoId,
+        eventId,
+      },
+    });
+
+    if (!photo) {
+      throw new NotFoundException('Photo not found');
+    }
+
+    return this.prisma.photo.delete({
+      where: {
+        id: photoId,
+      },
+    });
+  }
+
 }

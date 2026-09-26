@@ -1,10 +1,8 @@
 # Implementation Map
 
-Αυτό το αρχείο κρατάει πρακτικό χάρτη της εφαρμογής: τι έχει υλοποιηθεί,
-τι συνδέεται με τι, και ποιο είναι το επόμενο μικρό βήμα. Το ενημερώνουμε
-όταν προσθέτουμε modules, endpoints, services ή σημαντικούς κανόνες.
+Σκοπός αυτού του αρχείου είναι να κρατάει σύντομο χάρτη της υλοποίησης, ώστε η ομάδα να μην χάνεται και να υπάρχει υλικό για το τελικό PDF report. Κρατάμε μόνο χρήσιμες σημειώσεις: τι υλοποιήθηκε, βασικές σχεδιαστικές αποφάσεις, παραδοχές, testing και επόμενα βήματα.
 
-## Τρέχουσα εικόνα
+## Τρέχουσα Εικόνα
 
 Η εφαρμογή είναι χωρισμένη σε:
 
@@ -15,51 +13,47 @@
 Database source of truth:
 
 - Χρησιμοποιούμε `backend/prisma/schema.prisma` και Prisma migrations.
-- Τα παλιά χειροκίνητα `database/*.sql` αρχεία αφαιρέθηκαν επειδή δεν είναι
-  η κύρια πηγή αλήθειας του project.
+- Τα παλιά χειροκίνητα `database/*.sql` αφαιρέθηκαν επειδή δεν είναι η κύρια πηγή αλήθειας.
+- Η βάση είναι PostgreSQL μέσω Prisma.
+
+Γενικές παραδοχές:
+
+- Οι χρήστες εγκρίνονται από admin πριν μπορούν να κάνουν login κανονικά.
+- Τα IDs που έρχονται από URL params/query params φτάνουν ως strings και μετατρέπονται σε numbers πριν δοθούν στην Prisma.
+- Το backend είναι υπεύθυνο για security κανόνες, όχι μόνο το frontend.
 
 ## Backend Map
 
 ### AppModule
 
-Αρχείο: `backend/src/app.module.ts`
+Status: implemented.
 
-Σκοπός:
+Αρχεία:
 
-- Είναι το κεντρικό module του NestJS backend.
-- Συνδέει τα feature modules της εφαρμογής.
+- `backend/src/app.module.ts`
 
-Τρέχοντα modules:
+Ρόλος:
 
-- `UsersModule`
-- `EventsModule`
-- `PrismaModule`
-- `AuthModule`
+- Κεντρικό module του NestJS backend.
+- Συνδέει `UsersModule`, `AuthModule`, `EventsModule` και `PrismaModule`.
 
-Σημείωση:
+Σχεδιαστική απόφαση:
 
-- Οι controllers των feature modules κανονικά δηλώνονται μέσα στα δικά τους
-  modules. Το `AppModule` συνήθως κρατά μόνο `AppController`.
+- Οι controllers/services των features δηλώνονται στα δικά τους modules. Το `AppModule` κρατά μόνο τη σύνδεση των modules.
 
 ### PrismaModule
+
+Status: implemented.
 
 Αρχεία:
 
 - `backend/src/prisma/prisma.module.ts`
 - `backend/src/prisma/prisma.service.ts`
 
-Σκοπός:
+Ρόλος:
 
-- Δίνει κοινή πρόσβαση στη βάση δεδομένων μέσω Prisma.
-- Το `PrismaService` γίνεται injectable dependency για άλλα services.
-
-Συνδέεται με:
-
-- `UsersService`
-- μελλοντικά `AuthService`
-- μελλοντικά `EventsService`
-- μελλοντικά `BookingsService`
-- μελλοντικά `MessagesService`
+- Παρέχει κοινό `PrismaService` στα backend services.
+- Χρησιμοποιείται από users/auth/events και αργότερα bookings/messages.
 
 Dependencies:
 
@@ -68,7 +62,13 @@ Dependencies:
 - `@prisma/adapter-pg`
 - `pg`
 
+Σχεδιαστική απόφαση:
+
+- Το Prisma είναι η μοναδική πηγή πρόσβασης στη βάση, αντί για χειροκίνητα SQL files.
+
 ### UsersModule
+
+Status: backend foundation implemented.
 
 Αρχεία:
 
@@ -79,40 +79,37 @@ Dependencies:
 - `backend/src/users/dto/update-user.dto.ts`
 - `backend/src/users/dto/public-user.dto.ts`
 
-Σκοπός:
+Υλοποιήθηκαν:
 
-- Διαχείριση χρηστών.
-- Ανάγνωση χρηστών από τη βάση.
-- Δημιουργία χρήστη από εσωτερική λογική register.
-- Ενημέρωση χρήστη.
-- Soft delete με `active: false`.
-- Admin approval/rejection.
+- Δημιουργία user από register flow.
+- Επιστροφή public user χωρίς `passwordHash`.
+- Λίστα/λεπτομέρειες/ενημέρωση χρηστών.
+- Soft delete με `active = false`.
+- Admin approval/rejection μέσω `registrationStatus`.
+- Εσωτερική αναζήτηση user για auth μέσω `findInternalByUsername`.
 
-Συνδέεται με:
+Σχεδιαστικές αποφάσεις:
 
-- `PrismaModule`, επειδή κάνει queries στη βάση.
-- `AuthModule`, επειδή το auth χρειάζεται `UsersService`.
+- Δεν επιστρέφεται ποτέ `passwordHash` στο frontend.
+- Η διαγραφή user γίνεται ως soft delete για να μην χαθούν σχέσεις με events/bookings/messages.
+- Το login χρειάζεται internal method που βλέπει πλήρη user object, ενώ τα public endpoints επιστρέφουν sanitized DTO.
 
-Υλοποιημένα στο `UsersService`:
+Validation / κανόνες:
 
-- `toPublicUser(user)`: αφαιρεί ευαίσθητα πεδία όπως `passwordHash`.
-- `handlePrismaError(error)`: μετατρέπει Prisma errors σε NestJS HTTP errors.
-- `create(createUserDto, passwordHash)`: δημιουργεί χρήστη με hashed password.
-- `findAll()`: επιστρέφει όλους τους ενεργούς χρήστες.
-- `findOne(id)`: επιστρέφει έναν ενεργό χρήστη ή 404.
-- `update(id, updateUserDto)`: ενημερώνει χρήστη.
-- `remove(id)`: κάνει soft delete με `active: false`.
-- `approve(id)`: αλλάζει `registrationStatus` σε `APPROVED`.
-- `reject(id)`: αλλάζει `registrationStatus` σε `REJECTED`.
-- `findInternalByUsername(username)`: βρίσκει πλήρη user για εσωτερική χρήση από auth.
+- `CreateUserDto` ελέγχει email, password length, phone, AFM και required profile fields.
+- `UpdateUserDto` περιορίζεται σε ασφαλή editable fields.
 
-Γιατί υπάρχει το `findInternalByUsername`:
+Testing:
 
-- Το login χρειάζεται το `passwordHash` από τη βάση.
-- Τα public methods δεν πρέπει να επιστρέφουν `passwordHash`.
-- Άρα αυτή η μέθοδος είναι μόνο για backend services, όχι για frontend endpoint.
+- Register/login/approval flow δοκιμάστηκε runtime με πραγματική βάση.
+
+Εκκρεμότητες:
+
+- Καθαρισμός/ενημέρωση automated specs.
 
 ### AuthModule
+
+Status: implemented and runtime-tested.
 
 Αρχεία:
 
@@ -126,70 +123,35 @@ Dependencies:
 - `backend/src/auth/roles.guard.ts`
 - `backend/src/guards/jwt-auth/jwt-auth.guard.ts`
 
-Σκοπός:
-
-- Register νέου χρήστη.
-- Login με username/password.
-- Δημιουργία JWT.
-- Έλεγχος προστατευμένων routes με JWT.
-- Έλεγχος admin/user roles.
-
-Υλοποιημένα endpoints:
+Υλοποιήθηκαν:
 
 - `POST /auth/register`
 - `POST /auth/login`
+- Password hashing με `bcrypt`.
+- JWT creation με payload `sub`, `username`, `roles`.
+- JWT guard για protected endpoints.
+- Roles decorator/guard για admin-only actions.
 
-Συνδέεται με:
+Σχεδιαστικές αποφάσεις:
 
-- `UsersService`, για δημιουργία και εύρεση χρηστών.
-- `JwtService`, για υπογραφή JWT.
+- Το JWT secret είναι ένα server-side secret για υπογραφή/verification όλων των tokens, όχι ξεχωριστό μυστικό ανά χρήστη.
+- Pending/rejected users δεν επιτρέπεται να κάνουν login.
+- Τα roles μπαίνουν στο JWT για γρήγορο authorization στα protected endpoints.
 
-Υλοποιημένα στο `AuthService`:
+Validation / κανόνες:
 
-- `validateUser(username, password)`: βρίσκει user με username και ελέγχει
-  password με `bcrypt.compare`.
-- Αν ο user δεν υπάρχει ή το password είναι λάθος, επιστρέφει `Unauthorized`.
-- Αν ο user δεν είναι `APPROVED`, δεν του επιτρέπει login.
-- `login(username, password)`: φτιάχνει JWT με `sub`, `username`, `roles`.
-- `register(createUserDto)`: ελέγχει password confirmation, κάνει hash το
-  password και δημιουργεί user μέσω `UsersService.create`.
+- Λάθος credentials επιστρέφουν `Unauthorized`.
+- User με `registrationStatus !== APPROVED` δεν παίρνει token.
+- Admin endpoints απαιτούν JWT και role `admin`.
 
-Υλοποιημένα στο `AuthController`:
+Testing:
 
-- `POST /auth/login`: δέχεται `LoginDto` και επιστρέφει access token.
-- `POST /auth/register`: δέχεται `CreateUserDto` και δημιουργεί pending user.
-
-Υλοποιημένα για JWT:
-
-- `JwtPayload`: ορίζει τι μπαίνει μέσα στο token.
-- `JwtStrategy`: διαβάζει `Authorization: Bearer <token>` και γεμίζει
-  `request.user` με `userId`, `username`, `roles`.
-- `JwtAuthGuard`: προστατεύει endpoints που απαιτούν valid JWT.
-
-Υλοποιημένα για roles/admin authorization:
-
-- `Roles` decorator: δηλώνει ποια roles χρειάζεται ένα endpoint.
-- `RolesGuard`: διαβάζει το `@Roles(...)` metadata και ελέγχει
-  `request.user.roles`.
-- `GET /users`: προστατεύεται με JWT και απαιτεί role `admin`.
-- `PATCH /users/:id/approve`: προστατεύεται με JWT και απαιτεί role `admin`.
-- `PATCH /users/:id/reject`: προστατεύεται με JWT και απαιτεί role `admin`.
-
-Τι χρειάζεται ακόμα για verification:
-
-- Έγινε runtime test με πραγματική βάση.
-- Το admin login δουλεύει με seed user και επιστρέφει JWT.
-- Το register από frontend καλεί `POST /auth/register`.
-- Τα backend validation errors επιστρέφονται στο frontend.
-- Τα προστατευμένα/admin endpoints έχουν JWT/roles guards.
-
-Known caveats:
-
-- Τα automated tests δεν έχουν καθαριστεί ακόμα μετά τις αλλαγές.
-- Υπάρχουν npm audit warnings που αποφασίστηκε να μείνουν προσωρινά μέχρι
-  συζήτηση με την ομάδα.
+- Admin login με seed user δοκιμάστηκε με curl και επέστρεψε access token.
+- Protected/admin endpoints δοκιμάστηκαν με/χωρίς token.
 
 ### EventsModule
+
+Status: backend foundation implemented and curl-tested.
 
 Αρχεία:
 
@@ -198,26 +160,82 @@ Known caveats:
 - `backend/src/events/events.service.ts`
 - `backend/src/events/dto/create-event.dto.ts`
 - `backend/src/events/dto/update-event.dto.ts`
-- `backend/src/events/entities/event.entity.ts`
+- `backend/src/events/dto/create-ticket-type.dto.ts`
+- `backend/src/events/dto/update-ticket-type.dto.ts`
+- `backend/src/events/dto/create-category.dto.ts`
+- `backend/src/events/dto/set-event-categories.dto.ts`
+- `backend/src/events/dto/create-photo.dto.ts`
 
-Τρέχουσα κατάσταση:
+Υλοποιήθηκαν:
 
-- Έχει δημιουργηθεί skeleton με NestJS generator.
-- Δεν πρέπει να είναι το κύριο focus πριν ολοκληρωθεί auth/users.
+- Event flow: create, list, details, update.
+- Organizer dashboard endpoint: `GET /events/my`.
+- Status actions: publish, cancel, delete-as-cancel.
+- Public filters: `status`, `city`, `eventType`, `search`, `categoryId`.
+- Ticket types: create, update, delete.
+- Categories: list, admin create, assign to event.
+- Photos: add/delete URL or path references.
+- Default categories στο seed με `upsert`.
 
-Μελλοντικά:
+Κύρια endpoints:
 
-- Create draft event.
-- Publish event.
-- List/search published events.
-- Organizer event management.
-- Ticket types.
-- Capacity validation.
-- Cancel/delete rules.
+- `POST /events`
+- `GET /events`
+- `GET /events/my`
+- `GET /events/:id`
+- `PATCH /events/:id`
+- `PATCH /events/:id/publish`
+- `PATCH /events/:id/cancel`
+- `DELETE /events/:id`
+- `POST /events/:id/ticket-types`
+- `PATCH /events/:id/ticket-types/:ticketTypeId`
+- `DELETE /events/:id/ticket-types/:ticketTypeId`
+- `GET /events/categories`
+- `POST /events/categories`
+- `POST /events/:id/categories`
+- `POST /events/:id/photos`
+- `DELETE /events/:id/photos/:photoId`
+
+Σχεδιαστικές αποφάσεις:
+
+- Νέα events ξεκινούν ως `DRAFT`.
+- Το `organizerId` δεν έρχεται από το request body, αλλά από το JWT του logged-in user.
+- Το delete event δεν κάνει hard delete, αλλά αλλάζει status σε `CANCELLED`.
+- Categories αποθηκεύονται στη βάση λόγω many-to-many σχέσης με events.
+- Το `eventType` μένει string στο backend και θα ελέγχεται από frontend select/constants.
+- Photos αποθηκεύονται προσωρινά ως `filePath` strings, όχι ως πραγματικό file upload.
+- Ticket type `available` ξεκινά ίσο με `quantity`.
+
+Validation / κανόνες:
+
+- End date πρέπει να είναι μετά το start date.
+- Capacity πρέπει να είναι τουλάχιστον 1 και όχι μικρότερο από reserved seats.
+- Μόνο organizer/admin μπορεί να διαχειριστεί event, ticket types, categories και photos του event.
+- Cancelled/completed events δεν επιτρέπεται να αλλάξουν.
+- Completed event δεν μπορεί να ακυρωθεί.
+- Ticket quantity δεν μπορεί να γίνει μικρότερο από ήδη reserved tickets.
+- Category creation είναι admin-only.
+
+Testing:
+
+- Δοκιμάστηκαν με curl: create/list/details/update/publish/cancel/delete-as-cancel.
+- Δοκιμάστηκαν filters για search, eventType, status, city και categoryId.
+- Δοκιμάστηκαν ticket type create/update/delete.
+- Δοκιμάστηκαν categories create/list/assign.
+- Δοκιμάστηκαν photos add/delete.
+- Δοκιμάστηκαν αρνητικά cases για invalid date και cancelled event update/publish.
+
+Εκκρεμότητες:
+
+- Καθαρισμός/ενημέρωση `events.service.spec.ts` και controller specs.
+- Σύνδεση με Angular event list/detail/create/edit pages.
+- Booking flow αργότερα θα χρησιμοποιήσει events και ticket types.
 
 ## Database Map
 
-Αρχείο: `backend/prisma/schema.prisma`
+Αρχείο:
+
+- `backend/prisma/schema.prisma`
 
 Βασικά μοντέλα:
 
@@ -237,27 +255,25 @@ Enums:
 - `EventStatus`: `DRAFT`, `PUBLISHED`, `COMPLETED`, `CANCELLED`
 - `BookingStatus`: `PENDING`, `CONFIRMED`, `CANCELLED`
 
-Σημαντικοί κανόνες:
+Σχεδιαστικές αποφάσεις / παραδοχές:
 
-- Νέος user ξεκινά με `registrationStatus = PENDING`.
-- Δεν επιστρέφουμε ποτέ `passwordHash` στο frontend.
-- Διαγραφή user γίνεται ως soft delete με `active = false`.
-- Events συνδέονται με organizer μέσω `organizerId`.
-- Bookings συνδέονται με event, ticket type και attendee.
+- User deletion είναι soft delete μέσω `active = false`.
+- Event deletion είναι cancellation μέσω `status = CANCELLED`.
+- Event organizer είναι σχέση `Event.organizerId -> User.id`.
+- Categories έχουν many-to-many σχέση με events μέσω `EventCategory`.
+- Ticket types ανήκουν σε event και κρατούν `quantity` / `available` για μελλοντικό booking flow.
+- Photos κρατούν path/URL reference, όχι binary files στη βάση.
+
+Seed data:
+
+- Admin user για testing/login.
+- Default categories με `upsert`, ώστε να μη δημιουργούνται duplicates σε πολλαπλά seed runs.
 
 ## Frontend Map
 
-Τρέχουσα κατάσταση:
+Status: auth UI foundation implemented, events UI pending.
 
-- Angular project υπάρχει.
-- Υπάρχει αρχικό UI για welcome, login και register.
-- Τα βασικά routes είναι συνδεδεμένα.
-- Το login καλεί backend και αποθηκεύει JWT στο `localStorage`.
-- Το register καλεί backend και εμφανίζει success/error messages.
-- Τα register messages χρησιμοποιούν Angular `signal`, επειδή το project
-  δουλεύει με zoneless change detection.
-
-Αρχεία:
+Αρχεία/περιοχές:
 
 - `frontend/src/app/app.routes.ts`
 - `frontend/src/app/app.html`
@@ -266,45 +282,39 @@ Enums:
 - `frontend/src/app/pages/welcome/*`
 - `frontend/src/app/pages/login/*`
 - `frontend/src/app/pages/register/*`
+- `frontend/src/app/pages/admin/users/*` ή αντίστοιχη admin users περιοχή
 
-Routes:
+Υλοποιήθηκαν:
 
-- `/`: welcome page.
-- `/login`: login page.
-- `/register`: register page.
-- `/admin/users` : see pending user requests
+- Welcome page.
+- Login page.
+- Register page.
+- Basic routing.
+- Auth service για `POST /auth/login` και `POST /auth/register`.
+- JWT storage στο `localStorage`.
+- Register success/error messages με Angular `signal` λόγω zoneless change detection.
+- Register frontend validation σε βασικά πεδία.
+- Admin users page για pending approvals/rejections υπάρχει/δουλεύει, αλλά θέλει UI polish.
 
-Υλοποιημένα στο `Auth` frontend service:
+Σχεδιαστικές αποφάσεις:
 
-- `login(data)`: καλεί `POST /auth/login`.
-- `register(data)`: καλεί `POST /auth/register`.
-- `saveToken(token)`: αποθηκεύει JWT στο `localStorage`.
-- `getToken()`: διαβάζει JWT.
-- `logout()`: αφαιρεί JWT.
-- `isLoggedIn()`: ελέγχει αν υπάρχει token.
+- Angular frontend δουλεύει με routes για κάθε βασική σελίδα.
+- Το auth token αποθηκεύεται προσωρινά στο `localStorage`.
+- Το frontend θα χρησιμοποιεί σταθερό select για `eventType` αντί για ξεχωριστό database table.
+- Categories θα έρχονται από backend (`GET /events/categories`) επειδή είναι database entities.
 
-Μελλοντική σειρά:
+Εκκρεμότητες frontend:
 
-1. Frontend validation στο register, ίδιο με backend κανόνες. ok
-2. Admin users page για approve/reject pending users. ok
-3. JWT interceptor για protected requests.  οk 
-4. Auth guard στο frontend για protected pages. (να γίνει μετά το επόμενο βήμα, για admin σε page admin/users για non admin σε main page)
-5. User/admin dashboard μετά το login. (ο user στο login πρέπει να γίνεται redirect)
-6. Event browsing/management pages.
-7. Booking flow.
+- Auth guard για protected pages.
+- Redirect μετά το login ανάλογα με user/admin flow.
+- JWT interceptor για protected requests, αν δεν έχει ολοκληρωθεί πλήρως.
+- Event browsing page.
+- Event detail page.
+- Organizer my-events page.
+- Create/edit event form με ticket types, categories και photo URLs.
+- UI polish σε admin users page.
 
-## Επόμενο Μικρό Βήμα
-
-Πρώτο επόμενο βήμα:
-
-2. Φτιάχνουμε admin users page για να βλέπει ο admin pending users.έγινε αλλά θέλει CSS να ομορφύνει ok
-3. Συνδέουμε approve/reject buttons με τα admin backend endpoints. + σελίδα με τα στοιχεία κάθε χρήστη ξεχωριστά ok
-4. Μετά περνάμε στο πρώτο πραγματικό `EventsService` implementation.
-
-Έγινε - Παντελής:
-1. Ολοκληρώνουμε το frontend validation στο register.
-
-## Debug Checklist
+## Testing / Debug Checklist
 
 Όταν κάτι δεν δουλεύει:
 
@@ -314,4 +324,20 @@ Routes:
 4. Έλεγχος ότι το service είναι σε `providers`.
 5. Έλεγχος ότι ό,τι χρησιμοποιείται από άλλο module είναι σε `exports`.
 6. Έλεγχος `.env` για `DATABASE_URL`, `DIRECT_DATABASE_URL`, `JWT_SECRET`.
-7. Έλεγχος Prisma generate/migrations.
+7. Έλεγχος Prisma generate/migrations/seed.
+8. Runtime test με curl πριν συνδεθεί frontend.
+
+## Γνωστά Θέματα / Εκκρεμότητες
+
+- Τα generated specs/tests χρειάζονται update επειδή τα services πλέον έχουν dependencies όπως `PrismaService`.
+- Υπάρχουν npm audit warnings που αποφασίστηκε να μείνουν προσωρινά μέχρι συζήτηση με την ομάδα.
+- Το file upload δεν έχει υλοποιηθεί ακόμα. Προς το παρόν οι photos είναι URL/path strings.
+- Bookings και messages δεν έχουν ολοκληρωθεί στο backend μέσα σε αυτό το map.
+
+## Επόμενα Βήματα
+
+1. Να ολοκληρωθεί/ελεγχθεί το seed για default categories.
+2. Να γίνει update/cleanup των event specs αργότερα.
+3. Να ξεκινήσει frontend events flow: list, details, my events, create/edit.
+4. Να υλοποιηθεί booking backend και frontend flow.
+5. Να συνεχιστεί παράλληλα το messages backend από άλλο μέλος της ομάδας.

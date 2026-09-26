@@ -16,6 +16,11 @@ import { UpdateEventDto } from './dto/update-event.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth/jwt-auth.guard';
 import { CreateTicketTypeDto } from './dto/create-ticket-type.dto';
 import { UpdateTicketTypeDto } from './dto/update-ticket-type.dto';
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { SetEventCategoriesDto } from './dto/set-event-categories.dto';
+import { CreatePhotoDto } from './dto/create-photo.dto';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 
 type RequestWithUser = {
   user: {
@@ -42,8 +47,9 @@ export class EventsController {
     @Query('city') city?: string,
     @Query('eventType') eventType?: string,
     @Query('search') search?: string,
+    @Query('categoryId') categoryId?: string,
   ) {
-    return this.eventsService.findAll({ status, city, eventType, search, });
+    return this.eventsService.findAll({ status, city, eventType, search, categoryId, });
   }
 
   @UseGuards(JwtAuthGuard)
@@ -51,6 +57,19 @@ export class EventsController {
   findMine(@Req() request: RequestWithUser) {
     return this.eventsService.findMine(request.user.userId);
   }
+
+  @Get('categories')
+  findCategories() {
+    return this.eventsService.findCategories();
+  }
+
+  @Roles('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('categories')
+  createCategory(@Body() createCategoryDto: CreateCategoryDto) {
+    return this.eventsService.createCategory(createCategoryDto);
+  }
+  
 
   @Get(':id')
   findOne(@Param('id') id: string) {
@@ -97,6 +116,48 @@ export class EventsController {
     return this.eventsService.deleteTicketType(
       +id,
       +ticketTypeId,
+      request.user,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/categories')
+  setEventCategories(
+    @Param('id') id: string,
+    @Body() setEventCategoriesDto: SetEventCategoriesDto,
+    @Req() request: RequestWithUser,
+  ) {
+    return this.eventsService.setEventCategories(
+      +id,
+      setEventCategoriesDto,
+      request.user,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/photos')
+  addPhoto(
+    @Param('id') id: string,
+    @Body() createPhotoDto: CreatePhotoDto,
+    @Req() request: RequestWithUser,
+  ) {
+    return this.eventsService.addPhoto(
+      +id,
+      createPhotoDto,
+      request.user,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id/photos/:photoId')
+  deletePhoto(
+    @Param('id') id: string,
+    @Param('photoId') photoId: string,
+    @Req() request: RequestWithUser,
+  ) {
+    return this.eventsService.deletePhoto(
+      +id,
+      +photoId,
       request.user,
     );
   }

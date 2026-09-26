@@ -78,6 +78,28 @@ async function main() {
 
     console.log('Simple user seeded successfully.');
 
+    const defaultCategories = [
+      'Music',
+      'Technology',
+      'Sports',
+      'Theater',
+      'Food',
+      'Education',
+      'Business',
+      'Art',
+      'Community',
+      'Health',
+    ];
+
+    for (const name of defaultCategories) {
+      await prisma.category.upsert({
+        where: { name },
+        update: {},
+        create: { name },
+      });
+    }
+    console.log('Default categories seeded successfully.');
+
   }
 
 main()
