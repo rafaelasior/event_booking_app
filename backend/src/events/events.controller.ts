@@ -1,20 +1,55 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { JwtAuthGuard } from '../guards/jwt-auth/jwt-auth.guard';
+import { CreateTicketTypeDto } from './dto/create-ticket-type.dto';
+import { UpdateTicketTypeDto } from './dto/update-ticket-type.dto';
+
+type RequestWithUser = {
+  user: {
+    userId: number;
+    roles: string[];
+  };
+};
 
 @Controller('events')
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
+  @UseGuards(JwtAuthGuard)  // για να φτιάξεις event πρέπει να είσαι logged in
   @Post()
-  create(@Body() createEventDto: CreateEventDto) {
-    return this.eventsService.create(createEventDto);
+  create(
+    @Body() createEventDto: CreateEventDto,
+    @Req() request: RequestWithUser) {
+    return this.eventsService.create(createEventDto, request.user.userId);
   }
 
   @Get()
-  findAll() {
-    return this.eventsService.findAll();
+  findAll(
+    @Query('status') status?: string,
+    @Query('city') city?: string,
+    @Query('eventType') eventType?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.eventsService.findAll({ status, city, eventType, search, });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('my')
+  findMine(@Req() request: RequestWithUser) {
+    return this.eventsService.findMine(request.user.userId);
   }
 
   @Get(':id')
@@ -22,13 +57,81 @@ export class EventsController {
     return this.eventsService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEventDto: UpdateEventDto) {
-    return this.eventsService.update(+id, updateEventDto);
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/ticket-types')
+  createTicketType(
+    @Param('id') id: string,
+    @Body() createTicketTypeDto: CreateTicketTypeDto,
+    @Req() request: RequestWithUser,
+  ) {
+    return this.eventsService.createTicketType(
+      +id,
+      createTicketTypeDto,
+      request.user,
+    );
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/ticket-types/:ticketTypeId')
+  updateTicketType(
+    @Param('id') id: string,
+    @Param('ticketTypeId') ticketTypeId: string,
+    @Body() updateTicketTypeDto: UpdateTicketTypeDto,
+    @Req() request: RequestWithUser,
+  ) {
+    return this.eventsService.updateTicketType(
+      +id,
+      +ticketTypeId,
+      updateTicketTypeDto,
+      request.user,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id/ticket-types/:ticketTypeId')
+  deleteTicketType(
+    @Param('id') id: string,
+    @Param('ticketTypeId') ticketTypeId: string,
+    @Req() request: RequestWithUser,
+  ) {
+    return this.eventsService.deleteTicketType(
+      +id,
+      +ticketTypeId,
+      request.user,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() updateEventDto: UpdateEventDto,
+    @Req() request: RequestWithUser,  // δίνει τον τρεχοντα logged in user
+  ) {
+    return this.eventsService.update(+id, updateEventDto, request.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/publish')
+  publish(
+    @Param('id') id: string, 
+    @Req() request: RequestWithUser,
+  ) {
+    return this.eventsService.publish(+id, request.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/cancel')
+  cancel(
+    @Param('id') id: string, 
+    @Req() request: RequestWithUser
+  ) {
+    return this.eventsService.cancel(+id, request.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.eventsService.remove(+id);
+  remove(@Param('id') id: string, @Req() request: RequestWithUser) {
+    return this.eventsService.cancel(+id, request.user);
   }
 }

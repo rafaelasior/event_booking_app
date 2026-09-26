@@ -1,23 +1,365 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { EventStatus } from '../generated/prisma/client';
+import { CreateTicketTypeDto } from './dto/create-ticket-type.dto';
+import { UpdateTicketTypeDto } from './dto/update-ticket-type.dto';
+
+type EventFilters = {
+  status?: string;
+  city?: string;
+  eventType?: string;
+  search?: string;
+};
+
+type CurrentUser = {
+  userId: number;
+  roles: string[];
+};
+
+
 
 @Injectable()
 export class EventsService {
-  create(createEventDto: CreateEventDto) {
-    return 'This action adds a new event';
+  constructor(private readonly prisma: PrismaService) {}
+
+  // Validate that the provided status is a valid EventStatus enum value
+  private parseStatus(status?: string): EventStatus | undefined {
+    if (!status) {
+      return undefined;
+    }
+
+    if (!Object.values(EventStatus).includes(status as EventStatus)) {
+      throw new BadRequestException('Invalid event status');
+    }
+
+    return status as EventStatus;
   }
 
-  findAll() {
-    return `This action returns all events`;
+    // Validate that the end date is after the start date
+  private validateDateRange(startDateTime: string | Date, endDateTime: string | Date) {
+    const startDate = new Date(startDateTime);
+    const endDate = new Date(endDateTime);
+
+    if (endDate <= startDate) {
+      throw new BadRequestException('End date must be after start date');
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} event`;
+  // Ensure that the current user is either an admin or the organizer of the event
+  private ensureCanManageEvent(event: { organizerId: number }, user: CurrentUser) {
+      const isAdmin = user.roles.includes('admin');
+      const isOrganizer = event.organizerId === user.userId;
+
+      if (!isAdmin && !isOrganizer) {
+        throw new ForbiddenException('You cannot manage this event');
+      }
+    }
+
+  async create(createEventDto: CreateEventDto, organizerId: number) {
+    this.validateDateRange(
+      createEventDto.startDateTime,
+      createEventDto.endDateTime,
+    );
+
+    return this.prisma.event.create({
+      data: {
+        title: createEventDto.title,
+        eventType: createEventDto.eventType,
+        venue: createEventDto.venue,
+        address: createEventDto.address,
+        city: createEventDto.city,
+        country: createEventDto.country,
+        latitude: createEventDto.latitude,
+        longitude: createEventDto.longitude,
+        startDateTime: new Date(createEventDto.startDateTime),
+        endDateTime: new Date(createEventDto.endDateTime),
+        capacity: createEventDto.capacity,
+        description: createEventDto.description,
+        organizerId,
+      },
+    });
   }
 
-  update(id: number, updateEventDto: UpdateEventDto) {
-    return `This action updates a #${id} event`;
+  async findAll(filters: EventFilters = {}) {
+    const status = this.parseStatus(filters.status);
+    return this.prisma.event.findMany({ // παίρνει πολλά events από τη βαση
+      where: {
+        ...(status ? { status: status } : {}),  
+        ...(filters.city ? { city: filters.city } : {}),
+        ...(filters.eventType ? { eventType: filters.eventType } : {}),
+        ...(filters.search
+          ? {
+              title: {
+                contains: filters.search,
+                mode: 'insensitive' as const, //σημαίνει ότι δεν νοιάζεται για κεφαλαία/πεζά
+              },
+            }
+          : {}),
+      },
+      include: {    // μαζι με στοιχεία του οργανωτή τους (οχι όλα τα στοιχεία) 
+        organizer: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+      },
+      orderBy: {
+        startDateTime: 'asc',   // ταξινόμηση των events με βάση την ημερομηνία έναρξης σε αύξουσα σειρά
+      },
+    });
+  }
+
+  // Να επιστρέφει όλα τα events που έχει δημιουργήσει ο τρέχων χρήστης
+  async findMine(userId: number) {
+    return this.prisma.event.findMany({
+      where: {
+        organizerId: userId,
+      },
+      include: {
+        ticketTypes: true,
+        photos: true,
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
+  }
+
+  // Να επιστρέφει ένα συγκεκριμένο event από τη βάση ή 404 αν δεν υπάρχει
+  async findOne(id: number) {
+    const event = await this.prisma.event.findUnique({
+      where: { id },
+      include: {
+        organizer: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        ticketTypes: true, // συμπεριλαμβάνει τα tickets types που ανήκουν στο event
+        photos: true, // συμπεριλαμβάνει τις φωτογραφίες που ανήκουν στο event
+      },
+    });
+    
+    if (!event) {
+      throw new NotFoundException(`Event not found`);
+    }
+
+    return event;
+  }
+  
+
+  async update(id: number, updateEventDto: UpdateEventDto, user: CurrentUser) {
+    const event = await this.prisma.event.findUnique({
+      where: { id },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    this.ensureCanManageEvent(event, user);
+
+    // αν υπάρχει update χρησιμοποιησε το, αλλιώς κράτα το παλιό 
+    const nextStartDate = updateEventDto.startDateTime ?? event.startDateTime;
+    const nextEndDate = updateEventDto.endDateTime ?? event.endDateTime;
+    const nextCapacity = updateEventDto.capacity ?? event.capacity;
+
+    this.validateDateRange(nextStartDate, nextEndDate);
+
+    if (nextCapacity < event.reservedSeats) {
+      throw new BadRequestException('Capacity cannot be lower than reserved seats');
+    }
+
+    return this.prisma.event.update({
+      where: { id },
+      data: {
+        ...updateEventDto,
+        ...(updateEventDto.startDateTime
+          ? { startDateTime: new Date(updateEventDto.startDateTime) }
+          : {}),
+        ...(updateEventDto.endDateTime
+          ? { endDateTime: new Date(updateEventDto.endDateTime) }
+          : {}),
+      },
+    });
+  }
+
+  async publish(id: number, user: CurrentUser) {
+    const event = await this.prisma.event.findUnique({
+      where: { id },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    this.ensureCanManageEvent(event, user);
+    this.validateDateRange(event.startDateTime, event.endDateTime);
+
+    if (event.capacity <= event.reservedSeats) {
+      throw new BadRequestException('Event has no available capacity');
+    }
+
+    return this.prisma.event.update({
+      where: { id },
+      data: {
+        status: EventStatus.PUBLISHED,
+      },
+    });
+  }
+
+  async cancel(id: number, user: CurrentUser) {
+    const event = await this.prisma.event.findUnique({
+      where: { id },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    this.ensureCanManageEvent(event, user);
+
+    return this.prisma.event.update({
+      where: { id },
+      data: {
+        status: EventStatus.CANCELLED,
+      },
+    });
+  }
+
+  // Create a new ticket type for a specific event, ensuring that the user has permission to manage the event
+  async createTicketType(
+    eventId: number,
+    createTicketTypeDto: CreateTicketTypeDto,
+    user: CurrentUser,
+  ) {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    this.ensureCanManageEvent(event, user);
+
+    return this.prisma.ticketType.create({
+      data: {
+        eventId,
+        name: createTicketTypeDto.name,
+        price: createTicketTypeDto.price,
+        quantity: createTicketTypeDto.quantity,
+        available: createTicketTypeDto.quantity,  // ολα τα tickets είναι διαθέσιμα στην αρχή
+      },
+    });
+  }
+
+
+  async updateTicketType(
+    eventId: number,
+    ticketTypeId: number,
+    updateTicketTypeDto: UpdateTicketTypeDto,
+    user: CurrentUser,
+  ) {
+    // Eλέχγει οτι υπαρχει event και οτι ο χρήστης έχει δικαίωμα να το διαχειριστεί
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    this.ensureCanManageEvent(event, user);
+
+    // Eλέγχει οτι υπαρχει ticket type και οτι ανήκει στο συγκεκριμένο event
+    const ticketType = await this.prisma.ticketType.findFirst({
+      where: {
+        id: ticketTypeId,
+        eventId,
+      },
+    });
+
+    if (!ticketType) {
+      throw new NotFoundException('Ticket type not found');
+    }
+
+    // Ετοιμάζει τα δεδομένα για την ενημέρωση
+    const data: {
+      name?: string;
+      price?: number;
+      quantity?: number;
+      available?: number;
+    } = {};
+
+    if (updateTicketTypeDto.name !== undefined) {
+      data.name = updateTicketTypeDto.name;
+    }
+
+    if (updateTicketTypeDto.price !== undefined) {
+      data.price = updateTicketTypeDto.price;
+    }
+
+    if (updateTicketTypeDto.quantity !== undefined) {
+      const reserved = ticketType.quantity - ticketType.available;
+
+      if (updateTicketTypeDto.quantity < reserved) {
+        throw new BadRequestException(
+          'Quantity cannot be lower than already reserved tickets',
+        );
+      }
+
+      // Ενημερώνει την ποσότητα και τα διαθέσιμα εισιτήρια
+      data.quantity = updateTicketTypeDto.quantity;
+      data.available = updateTicketTypeDto.quantity - reserved;
+    }
+
+    return this.prisma.ticketType.update({
+      where: { id: ticketTypeId },
+      data,
+    });
+  }
+
+  async deleteTicketType(
+    eventId: number,
+    ticketTypeId: number,
+    user: CurrentUser,
+  ) {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    this.ensureCanManageEvent(event, user);
+
+    const ticketType = await this.prisma.ticketType.findFirst({
+      where: {
+        id: ticketTypeId,
+        eventId,
+      },
+    });
+
+    if (!ticketType) {
+      throw new NotFoundException('Ticket type not found');
+    }
+
+    return this.prisma.ticketType.delete({
+      where: {
+        id: ticketTypeId,
+      },
+    });
   }
 
   remove(id: number) {
