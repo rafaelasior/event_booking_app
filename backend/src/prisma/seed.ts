@@ -50,7 +50,35 @@ async function main() {
   });
 
   console.log('Admin user seeded successfully.');
-}
+
+    const userPasswordHash = await bcrypt.hash('user1234', 10);
+
+    const userData = {
+      email: 'user@example.com',
+      passwordHash: userPasswordHash,
+      roles: ['user'],
+      active: true,
+      firstName: 'Simple',
+      lastName: 'User',
+      phone: '6900000000',
+      address: 'User Address',
+      city: 'Athens',
+      country: 'Greece',
+      latitude: 37.9838,
+      longitude: 23.7275,
+      AFM: '111111111',
+      registrationStatus: 'APPROVED' as const,
+    };
+
+    await prisma.user.upsert({
+      where: { username: 'user' },
+      update: userData,
+      create: { username: 'user', ...userData },
+    });
+
+    console.log('Simple user seeded successfully.');
+
+  }
 
 main()
   .catch((error) => {

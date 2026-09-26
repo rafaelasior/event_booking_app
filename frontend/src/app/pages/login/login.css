@@ -85,3 +85,8 @@ button:hover {
   color: #2257c8;
   font-weight: 700;
 }
+
+.error-message {
+  color: #b42318;
+  font-weight: 700;
+}

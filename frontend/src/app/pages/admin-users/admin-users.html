@@ -1,0 +1,21 @@
+<h1>Pending users</h1>
+
+@if (errorMessage()) {
+  <p class="error">{{ errorMessage() }}</p>
+}
+
+@if (users().length === 0 && !errorMessage()) {
+  <p>No pending users.</p>
+}
+
+<table>
+  <tr><th>ID</th><th>Username</th><th>Email</th><th>Status</th></tr>
+  @for (user of users(); track user.id) {
+    <tr>
+      <td>{{ user.id }}</td>
+      <td>{{ user.username }}</td>
+      <td>{{ user.email }}</td>
+      <td>{{ user.registrationStatus }}</td>
+    </tr>
+  }
+</table>

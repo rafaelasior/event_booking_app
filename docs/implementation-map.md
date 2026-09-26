@@ -272,6 +272,7 @@ Routes:
 - `/`: welcome page.
 - `/login`: login page.
 - `/register`: register page.
+- `/admin/users` : see pending user requests
 
 Υλοποιημένα στο `Auth` frontend service:
 
@@ -284,9 +285,9 @@ Routes:
 
 Μελλοντική σειρά:
 
-1. Frontend validation στο register, ίδιο με backend κανόνες.
-2. Admin users page για approve/reject pending users.
-3. JWT interceptor για protected requests.
+1. Frontend validation στο register, ίδιο με backend κανόνες. ok
+2. Admin users page για approve/reject pending users. Λείπει το CSS και τα κουμπια approve reject
+3. JWT interceptor για protected requests.  οk 
 4. Auth guard στο frontend για protected pages.
 5. User/admin dashboard μετά το login.
 6. Event browsing/management pages.
@@ -296,7 +297,7 @@ Routes:
 
 Πρώτο επόμενο βήμα:
 
-2. Φτιάχνουμε admin users page για να βλέπει ο admin pending users.
+2. Φτιάχνουμε admin users page για να βλέπει ο admin pending users.έγινε αλλά θέλει CSS να ομορφύνει
 3. Συνδέουμε approve/reject buttons με τα admin backend endpoints.
 4. Μετά περνάμε στο πρώτο πραγματικό `EventsService` implementation.
 

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Auth } from '../../auth/auth';
@@ -16,14 +16,24 @@ export class Login {
   };
   constructor(private readonly auth: Auth) {}
 
+  errorMessage= signal('');
+
   submitLogin() {
+
+    this.auth.logout();  // σβήνει το token του προηγούμενου χρήστη
+    this.errorMessage.set('');
+
     this.auth.login(this.form).subscribe({
       next: (response) => {
         this.auth.saveToken(response.access_token);
-        console.log('login success:', response);
       },
       error: (error) => {
-        console.error('login failed:', error);
+        const backendMessage = error.error?.message;
+        this.errorMessage.set(
+          Array.isArray(backendMessage)
+            ? backendMessage.join(', ')
+            : backendMessage ?? 'Login failed.',
+        );
       },
     });
   }

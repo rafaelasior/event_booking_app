@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, User as DbUser } from '../generated/prisma/client';
+import { Prisma, User as DbUser, RegistrationStatus} from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -72,9 +72,10 @@ export class UsersService {
   }
 
   // επιστρεφει μόνο τους ενεργούς χρήστες (active: true) και τους ταξινομεί κατά αύξουσα σειρά id
-  async findAll(): Promise<PublicUserDto[]> {
+  async findAll(status?: string): Promise<PublicUserDto[]> {
     const users = await this.prisma.user.findMany({
-      where: { active: true },
+      where: { active: true,...(status ? { registrationStatus: status as RegistrationStatus } : {}), //...( ): απλώνει ό,τι βγήκε μέσα στο where
+       },
       orderBy: { id: 'asc' },
     });
 

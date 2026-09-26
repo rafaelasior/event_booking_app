@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Param, Delete, Body, UseGuards, } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Delete, Body, UseGuards, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth/jwt-auth.guard';
@@ -18,8 +18,8 @@ export class UsersController {
 // με token admin -> περνάει
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query('status') status? : string) {
+    return this.usersService.findAll(status);
   }
 
   @Get(':id')

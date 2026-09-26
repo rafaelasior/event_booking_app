@@ -5,6 +5,10 @@
     <h1>Login</h1>
     <p>Sign in to manage events and bookings.</p>
 
+    @if (errorMessage()) {
+      <p class="error-message">{{ errorMessage() }}</p>
+    }
+
     <form (ngSubmit)="submitLogin()">
       <label>
         Username
