@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PublicUserDto } from './dto/public-user.dto';
+import { UserDetailsDto } from './dto/user-details.dto';
 
 @Injectable()
 export class UsersService {
@@ -23,6 +24,22 @@ export class UsersService {
       registrationStatus: user.registrationStatus,
     };
   }
+
+  private toUserDetails(user: DbUser): UserDetailsDto {
+  return {
+    ...this.toPublicUser(user),
+    firstName: user.firstName,
+    lastName: user.lastName,
+    phone: user.phone,
+    address: user.address,
+    city: user.city,
+    country: user.country,
+    AFM: user.AFM,
+    latitude: user.latitude,
+    longitude: user.longitude,
+    createdAt: user.createdAt,
+  };
+}
 
   private handlePrismaError(error: unknown): never {
     if (
@@ -84,7 +101,7 @@ export class UsersService {
   }
 
   // επιστρέφει μόνο τον ενεργό χρήστη με το συγκεκριμένο id (active: true)
-  async findOne(id: number): Promise<PublicUserDto> {
+  async findOne(id: number): Promise<UserDetailsDto> {
     const user = await this.prisma.user.findFirst({
       where: { id, active: true },
     });
@@ -93,7 +110,7 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    return this.toPublicUser(user);
+    return this.toUserDetails(user);
   }
 
   async update(

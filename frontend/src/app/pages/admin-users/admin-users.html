@@ -24,7 +24,8 @@
             <!--Διαβάζει από το sortedUsers() αντί για το users(), οπότε οι pending βγαίνουν πρώτοι-->
             @for (user of sortedUsers(); track user.id) {
               <tr>
-                <td>{{ user.id }}</td>
+                <!--clickable username-->
+                <td><a class="user-link" [routerLink]="['/admin/users', user.id]">{{ user.username }}</a></td>
                 <td>{{ user.username }}</td>
                 <td>{{ user.email }}</td>
                 <td>

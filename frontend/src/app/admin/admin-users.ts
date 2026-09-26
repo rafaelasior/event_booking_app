@@ -11,6 +11,20 @@ export type PublicUser = {
   registrationStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
 };
 
+// έχει τα ίδια πεδία με το UserDetailsDto του backend.
+export type UserDetails = PublicUser & {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  address: string;
+  city: string;
+  country: string;
+  AFM: string;
+  latitude: number | null;
+  longitude: number | null;
+  createdAt: string;
+};
+
 @Injectable({
   providedIn: 'root',
 })
@@ -22,6 +36,11 @@ export class AdminUsers {
   // GET /users
   getUsers(): Observable<PublicUser[]> {
     return this.http.get<PublicUser[]>(this.apiUrl);
+  }
+
+  // GET /users/:id
+  getUser(id: number): Observable<UserDetails> {
+    return this.http.get<UserDetails>(`${this.apiUrl}/${id}`);
   }
 
   // PATCH /users/:id/approve

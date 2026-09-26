@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { AdminUsers, PublicUser } from '../../admin/admin-users';
 import { finalize } from 'rxjs';
+import { RouterLink } from '@angular/router';
 
 const STATUS_ORDER: Record<PublicUser['registrationStatus'], number> = {
   PENDING: 0,
@@ -10,6 +11,7 @@ const STATUS_ORDER: Record<PublicUser['registrationStatus'], number> = {
 
 @Component({
   selector: 'app-admin-users',
+  imports: [RouterLink],
   templateUrl: './admin-users.html',
   styleUrl: './admin-users.css',
 })

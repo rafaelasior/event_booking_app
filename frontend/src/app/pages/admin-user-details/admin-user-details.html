@@ -1,0 +1,67 @@
+<main class="admin-page">
+  <section class="admin-panel">
+    <a routerLink="/admin/users" class="back-link">Back to users</a>
+
+    @if (errorMessage()) {
+      <p class="error-message">{{ errorMessage() }}</p>
+    }
+
+    @if (user(); as u) {
+      <div class="details-header">
+        <h1>{{ u.username }}</h1>
+        <span class="badge" [attr.data-status]="u.registrationStatus">
+          {{ u.registrationStatus }}
+        </span>
+      </div>
+
+      <dl class="details">
+        <dt>Full name</dt>
+        <dd>{{ u.firstName }} {{ u.lastName }}</dd>
+
+        <dt>Email</dt>
+        <dd>{{ u.email }}</dd>
+
+        <dt>Phone</dt>
+        <dd>{{ u.phone }}</dd>
+
+        <dt>AFM</dt>
+        <dd>{{ u.AFM }}</dd>
+
+        <dt>Address</dt>
+        <dd>{{ u.address }}, {{ u.city }}, {{ u.country }}</dd>
+
+        <dt>Location</dt>
+        <dd>
+          @if (u.latitude !== null && u.longitude !== null) {
+            {{ u.latitude }}, {{ u.longitude }}
+          } @else {
+            <span class="muted">Not set</span>
+          }
+        </dd>
+
+        <dt>Roles</dt>
+        <dd>{{ u.roles.join(', ') }}</dd>
+
+        <dt>Registered</dt>
+        <dd>{{ u.createdAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+      </dl>
+
+      <div class="details-actions">
+        @switch (u.registrationStatus) {
+          @case ('PENDING') {
+            <button class="btn approve" [disabled]="busy()" (click)="changeStatus('approve')">Approve</button>
+            <button class="btn reject" [disabled]="busy()" (click)="changeStatus('reject')">Reject</button>
+          }
+          @case ('APPROVED') {
+            @if (!u.roles.includes('admin')) {
+              <button class="btn revoke" [disabled]="busy()" (click)="changeStatus('reject')">Revoke</button>
+            }
+          }
+          @case ('REJECTED') {
+            <button class="btn approve" [disabled]="busy()" (click)="changeStatus('approve')">Approve</button>
+          }
+        }
+      </div>
+    }
+  </section>
+</main>
