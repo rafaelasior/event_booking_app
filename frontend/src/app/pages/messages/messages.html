@@ -1,0 +1,48 @@
+<!--admin-page and admin-panel is the global layout from style.css-->
+<main class="admin-page">
+  <section class="admin-panel">
+    <div class="messages-header">
+      <h1>Messages</h1>
+      <a routerLink="/messages/new" class="btn primary">New message</a>
+    </div>
+
+    <nav class="tabs">
+      <a routerLink="/messages" [queryParams]="{ box: 'inbox' }" [class.active]="box() === 'inbox'">
+        Inbox
+        @if (messagesService.unreadCount() > 0) {
+          <span class="unread-badge">{{ messagesService.unreadCount() }}</span>
+        }
+      </a>
+      <a routerLink="/messages" [queryParams]="{ box: 'sent' }" [class.active]="box() === 'sent'">
+        Sent
+      </a>
+    </nav>
+
+    @if (errorMessage()) {
+      <p class="error-message">{{ errorMessage() }}</p>
+    }
+
+    @if (messages().length > 0) {
+      <ul class="message-list">
+        @for (message of messages(); track message.id) {
+          <!-- Τα αδιάβαστα (μόνο στα εισερχόμενα) εμφανίζονται με bold και φόντο -->
+          <li [class.unread]="box() === 'inbox' && !message.isRead">
+            <a class="message-link" [routerLink]="['/messages', message.id]">
+              <span class="subject">{{ message.subject }}</span>
+              <span class="meta">
+                {{ box() === 'inbox' ? 'From' : 'To' }}: {{ otherUser(message).username }}
+                @if (message.event) {
+                  · {{ message.event.title }}
+                }
+              </span>
+            </a>
+            <span class="date">{{ message.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+            <button class="btn revoke" (click)="remove(message)">Delete</button>
+          </li>
+        }
+      </ul>
+    } @else if (!errorMessage() && !loading()) {
+      <p class="muted">No messages.</p>
+    }
+  </section>
+</main>

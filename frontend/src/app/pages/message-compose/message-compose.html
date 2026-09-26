@@ -1,0 +1,46 @@
+<main class="admin-page">
+  <section class="admin-panel">
+    <a routerLink="/messages" class="back-link">Back to messages</a>
+
+    <h1>New message</h1>
+
+    @if (errorMessage()) {
+      <p class="error-message">{{ errorMessage() }}</p>
+    }
+
+    @if (contactsLoaded() && contacts().length === 0) {
+      <p class="muted">
+        You have no contacts yet. Messaging becomes available after a booking:
+        attendees can write to the organizer of an event they booked,
+        and organizers can write to the attendees of their events.
+      </p>
+    }
+
+    <form #composeForm="ngForm" (ngSubmit)="submit(composeForm)">
+      <label>
+        To
+        <select name="contactKey" required [(ngModel)]="form.contactKey">
+          <option value="" disabled>Choose a recipient</option>
+          @for (contact of contacts(); track contactKey(contact)) {
+            <option [value]="contactKey(contact)">
+              {{ contact.user.firstName }} {{ contact.user.lastName }}
+              ({{ contact.role }}) · {{ contact.event.title }}
+            </option>
+          }
+        </select>
+      </label>
+
+      <label>
+        Subject
+        <input type="text" name="subject" required maxlength="200" [(ngModel)]="form.subject" />
+      </label>
+
+      <label>
+        Message
+        <textarea name="content" required maxlength="5000" rows="8" [(ngModel)]="form.content"></textarea>
+      </label>
+
+      <button type="submit" class="btn primary" [disabled]="sending()">Send</button>
+    </form>
+  </section>
+</main>

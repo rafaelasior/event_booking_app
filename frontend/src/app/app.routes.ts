@@ -4,6 +4,10 @@ import { Login } from './pages/login/login';
 import { Register } from './pages/register/register';
 import { AdminUsersPage } from './pages/admin-users/admin-users';
 import { AdminUserDetails } from './pages/admin-user-details/admin-user-details';
+import { MessagesPage } from './pages/messages/messages';
+import { MessageDetails } from './pages/message-details/message-details';
+import { MessageCompose } from './pages/message-compose/message-compose';
+
 
 export const routes: Routes = [
   { path: '', component: Welcome },
@@ -11,4 +15,8 @@ export const routes: Routes = [
   { path: 'register', component: Register },
   { path: 'admin/users', component: AdminUsersPage },
   { path: 'admin/users/:id', component: AdminUserDetails },
+  { path: 'messages', component: MessagesPage },
+  { path: 'messages/new', component: MessageCompose },   // ΠΡΙΝ από το :id
+  { path: 'messages/:id', component: MessageDetails },
+
 ];

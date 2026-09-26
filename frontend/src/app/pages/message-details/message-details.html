@@ -1,0 +1,44 @@
+<main class="admin-page">
+  <section class="admin-panel">
+    <a routerLink="/messages" [queryParams]="{ box: isSentByMe() ? 'sent' : 'inbox' }" class="back-link">
+      Back to messages
+    </a>
+
+    @if (errorMessage()) {
+      <p class="error-message">{{ errorMessage() }}</p>
+    }
+
+    @if (message(); as m) {
+      <h1>{{ m.subject }}</h1>
+
+      <dl class="details">
+        <dt>From</dt>
+        <dd>{{ m.sender.firstName }} {{ m.sender.lastName }} ({{ m.sender.username }})</dd>
+
+        <dt>To</dt>
+        <dd>{{ m.receiver.firstName }} {{ m.receiver.lastName }} ({{ m.receiver.username }})</dd>
+
+        @if (m.event) {
+          <dt>Event</dt>
+          <dd>{{ m.event.title }}</dd>
+        }
+
+        <dt>Date</dt>
+        <dd>{{ m.createdAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+      </dl>
+
+      <p class="content">{{ m.content }}</p>
+
+      <div class="details-actions">
+        @if (!isSentByMe()) {
+          <!-- Το Reply ανοίγει τη φόρμα με συμπληρωμένα παραλήπτη, event και θέμα -->
+          <a class="btn primary" routerLink="/messages/new"
+             [queryParams]="{ to: m.sender.id, event: m.eventId, subject: replySubject(m) }">
+            Reply
+          </a>
+        }
+        <button class="btn revoke" (click)="remove()">Delete</button>
+      </div>
+    }
+  </section>
+</main>

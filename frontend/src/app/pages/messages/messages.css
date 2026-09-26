@@ -1,0 +1,90 @@
+h1 {
+  margin: 0;
+  color: #172033;
+  font-size: 34px;
+}
+
+.messages-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+  border-bottom: 1px solid #e6ebf2;
+}
+
+.tabs a {
+  margin-bottom: -1px;
+  padding: 10px 14px;
+  border-bottom: 3px solid transparent;
+  color: #5e6b7e;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tabs a.active {
+  border-bottom-color: #2257c8;
+  color: #2257c8;
+}
+
+.message-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.message-list li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 12px;
+  border-bottom: 1px solid #e6ebf2;
+}
+
+.message-list li.unread {
+  background: #f4f7fb;
+}
+
+.message-list li.unread .subject {
+  font-weight: 700;
+}
+
+.message-link {
+  flex: 1;
+  min-width: 0;  /* για να κόβεται το μεγάλο subject με ... αντί να σπάει τη γραμμή */
+  display: grid;
+  gap: 4px;
+  color: #223047;
+  text-decoration: none;
+}
+
+.message-link:hover .subject {
+  text-decoration: underline;
+}
+
+.subject {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta,
+.date {
+  color: #8a96a8;
+  font-size: 13px;
+}
+
+.date {
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .message-list li {
+    flex-wrap: wrap;
+  }
+}

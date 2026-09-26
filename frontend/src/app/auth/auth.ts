@@ -56,4 +56,20 @@ export class Auth {
   isLoggedIn(): boolean {
     return this.getToken() !== null;
   }
+
+  // Διαβάζει το id του συνδεδεμένου χρήστη από το payload του JWT (πεδίο "sub").
+  // Δεν ελέγχει την υπογραφή (αυτό το κάνει το backend) είναι μόνο για το UI.
+  getUserId(): number | null {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      // JWT = header.payload.signature, κάθε κομμάτι σε base64url
+      const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(payload)).sub ?? null;
+    } catch {
+      return null;
+    }
+  }
+
 }
