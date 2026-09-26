@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  BadRequestException
 } from '@nestjs/common';
 import { Prisma, User as DbUser, RegistrationStatus} from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -142,6 +143,12 @@ export class UsersService {
 
   // αλλάζει το registrationStatus του χρήστη σε 'REJECTED' αφού έχει γίνει έλεγχος των στοιχείων του από τον admin.
   async reject(id: number): Promise<PublicUserDto> {
+    
+    const target = await this.prisma.user.findUnique({ where: { id } });
+    if (!target) throw new NotFoundException('User not found');
+    if (target.roles.includes('admin')) {
+    throw new BadRequestException('Cannot reject an admin');
+  }
     try {
       const user = await this.prisma.user.update({
         where: { id },

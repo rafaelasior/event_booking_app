@@ -71,3 +71,8 @@ Users:
 
 εκανα nest g resource users.
 Μάλλον θα χρειαστεί να φτιάξω prisma module
+
+Κάτι που πρέπει να ξέρεις: Το Revoke δεν πετάει έξω έναν χρήστη που είναι ήδη logged in. 
+Το JWT του ισχύει για 1 ώρα και το JwtStrategy.validate δεν ρωτάει τη βάση. 
+Για τώρα είναι αποδεκτό, απλώς γράψ' το στα caveats του implementation-map. 
+Αργότερα διορθώνεται αν το validate φορτώνει τον χρήστη και ελέγχει ότι είναι APPROVED.

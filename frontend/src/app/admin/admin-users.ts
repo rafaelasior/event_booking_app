@@ -19,11 +19,9 @@ export class AdminUsers {
 
   constructor(private readonly http: HttpClient) {}
 
-  // GET /users?status=PENDING
-  getPendingUsers(): Observable<PublicUser[]> {
-    return this.http.get<PublicUser[]>(this.apiUrl, {
-      params: { status: 'PENDING' },
-    });
+  // GET /users
+  getUsers(): Observable<PublicUser[]> {
+    return this.http.get<PublicUser[]>(this.apiUrl);
   }
 
   // PATCH /users/:id/approve
