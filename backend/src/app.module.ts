@@ -6,11 +6,12 @@ import { EventsModule } from './events/events.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { MessagesModule } from './messages/messages.module';
+import { BookingsModule } from './bookings/bookings.module';
 // Το AuthController δηλώνεται ήδη μέσα στο AuthModule.
 
 
 @Module({
-  imports: [UsersModule, EventsModule, PrismaModule, AuthModule, MessagesModule],
+  imports: [UsersModule, EventsModule, PrismaModule, AuthModule, MessagesModule, BookingsModule],
   controllers: [AppController],
   providers: [AppService],
 })
