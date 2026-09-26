@@ -7,12 +7,16 @@ import { AdminUserDetails } from './pages/admin-user-details/admin-user-details'
 import { MessagesPage } from './pages/messages/messages';
 import { MessageDetails } from './pages/message-details/message-details';
 import { MessageCompose } from './pages/message-compose/message-compose';
+import { EventDetails } from './pages/event-details/event-details';
+import { EventsPage } from './pages/events/events';
 
 
 export const routes: Routes = [
   { path: '', component: Welcome },
   { path: 'login', component: Login },
   { path: 'register', component: Register },
+  { path: 'events', component: EventsPage },
+  { path: 'events/:id', component: EventDetails },
   { path: 'admin/users', component: AdminUsersPage },
   { path: 'admin/users/:id', component: AdminUserDetails },
   { path: 'messages', component: MessagesPage },

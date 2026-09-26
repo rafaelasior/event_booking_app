@@ -1,0 +1,113 @@
+<main class="details-page">
+  <nav class="top-nav">
+    <a routerLink="/" class="brand">Event Booking</a>
+
+    <div class="nav-actions">
+      <a routerLink="/">Browse</a>
+      <a routerLink="/login">Sign in</a>
+      <a routerLink="/register" class="primary-link">Register</a>
+    </div>
+  </nav>
+
+  <section class="details-shell">
+    <a routerLink="/" class="back-link">Back to events</a>
+
+    @if (loading()) {
+      <p class="state-message">Loading event...</p>
+    }
+
+    @if (errorMessage()) {
+      <p class="error-message">{{ errorMessage() }}</p>
+    }
+
+    @if (event(); as event) {
+      <article class="event-layout">
+        <div class="event-main">
+          @if (event.photos?.length) {
+            <img
+              class="cover-image"
+              [src]="event.photos?.[0]?.filePath"
+              [alt]="event.title"
+            />
+          } @else {
+            <div class="cover-placeholder">
+              {{ event.eventType }}
+            </div>
+          }
+
+          <p class="event-meta">{{ event.eventType }} · {{ event.city }}</p>
+          <h1>{{ event.title }}</h1>
+
+          @if (categoryNames(event)) {
+            <p class="categories">{{ categoryNames(event) }}</p>
+          }
+
+          <p class="description">{{ event.description }}</p>
+
+          <section class="info-section">
+            <h2>Tickets</h2>
+
+            @if (event.ticketTypes?.length) {
+              <div class="ticket-list">
+                @for (ticket of event.ticketTypes; track ticket.id) {
+                  <div class="ticket-row">
+                    <div>
+                      <strong>{{ ticket.name }}</strong>
+                      <span>{{ ticket.available }} available</span>
+                    </div>
+                    <p>€{{ ticket.price }}</p>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="muted">No ticket types available yet.</p>
+            }
+          </section>
+        </div>
+
+        <aside class="event-side">
+          <div class="side-card">
+            <p class="label">Starts</p>
+            <p class="strong">{{ formatDate(event.startDateTime) }}</p>
+
+            <p class="label">Ends</p>
+            <p class="strong">{{ formatDate(event.endDateTime) }}</p>
+
+            <p class="label">Venue</p>
+            <p>{{ event.venue }}</p>
+            <p class="muted">
+              {{ event.address }}, {{ event.city }}, {{ event.country }}
+            </p>
+
+            <p class="label">Availability</p>
+            <p class="strong">{{ availableSeats(event) }} seats available</p>
+
+            @if (minimumPrice(event) !== null) {
+              <p class="price">From €{{ minimumPrice(event) }}</p>
+            }
+
+            @if (event.status === 'PUBLISHED') {
+              <a routerLink="/login" class="book-link">Sign in to book</a>
+            } @else {
+              <p class="status-note">This event is {{ event.status }}.</p>
+            }
+          </div>
+
+          @if (event.latitude !== null && event.longitude !== null) {
+            <div class="side-card">
+              <p class="label">Map</p>
+              <a
+                class="map-link"
+                [href]="'https://www.openstreetmap.org/?mlat=' + event.latitude + '&mlon=' + event.longitude + '#map=15/' + event.latitude + '/' + event.longitude"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open in OpenStreetMap
+              </a>
+            </div>
+          }
+        </aside>
+      </article>
+    }
+  </section>
+</main>

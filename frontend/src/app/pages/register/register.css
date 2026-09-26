@@ -1,57 +1,61 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background:
+    linear-gradient(110deg, var(--color-primary-soft), var(--color-accent-soft)),
+    var(--color-page);
+  color: var(--color-text);
+}
+
 .auth-page {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 32px;
-  background: #f4f7fb;
+  padding: 32px 20px;
+  box-sizing: border-box;
 }
 
 .auth-panel {
-  width: min(100%, 720px);
-  padding: 36px;
-  border: 1px solid #d8e0ea;
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 18px 50px rgba(26, 43, 73, 0.08);
+  width: min(100%, 760px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-soft);
+  padding: 28px;
 }
 
 .back-link {
   display: inline-block;
+  color: var(--color-primary);
+  font-weight: 800;
   margin-bottom: 24px;
-  color: #2257c8;
-  font-weight: 700;
   text-decoration: none;
 }
 
 h1 {
-  margin: 0;
-  color: #172033;
-  font-size: 34px;
+  margin: 0 0 10px;
+  font-size: 2rem;
+  line-height: 1.1;
 }
 
 p {
-  margin: 12px 0 0;
-  color: #5e6b7e;
-  line-height: 1.5;
-}
-
-form {
-  display: grid;
-  gap: 22px;
-  margin-top: 28px;
+  color: var(--color-muted);
+  line-height: 1.6;
+  margin: 0 0 22px;
 }
 
 .form-grid {
   display: grid;
+  gap: 16px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
 }
 
 label {
+  color: var(--color-muted);
   display: grid;
-  gap: 8px;
-  color: #223047;
-  font-weight: 700;
+  gap: 7px;
+  font-size: 0.88rem;
+  font-weight: 800;
 }
 
 .full-row {
@@ -59,83 +63,60 @@ label {
 }
 
 input {
-  min-height: 44px;
-  padding: 0 12px;
-  border: 1px solid #b8c4d4;
-  border-radius: 6px;
-  font: inherit;
-}
-
-input:focus {
-  outline: 3px solid rgba(34, 87, 200, 0.16);
-  border-color: #2257c8;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
+  color: var(--color-text);
+  padding: 12px;
 }
 
 button {
-  min-height: 46px;
+  width: 100%;
   border: 0;
-  border-radius: 6px;
-  background: #2257c8;
-  color: white;
-  font: inherit;
-  font-weight: 700;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: #fff;
   cursor: pointer;
+  font-weight: 900;
+  margin-top: 18px;
+  padding: 13px 16px;
 }
 
-button:hover {
-  background: #1a49ad;
+.success-message,
+.error-message {
+  border-radius: var(--radius-sm);
+  font-weight: 800;
+  margin-bottom: 16px;
+  padding: 12px 14px;
 }
 
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
+.success-message {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.error-message {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+ul.error-message {
+  padding-left: 34px;
 }
 
 .switch-text {
-  margin-top: 22px;
+  margin-top: 20px;
   text-align: center;
 }
 
 .switch-text a {
-  color: #2257c8;
-  font-weight: 700;
+  color: var(--color-primary);
+  font-weight: 900;
 }
 
-.success-message {
-  color: #116329;
-  font-weight: 700;
-}
-
-.error-message {
-  color: #b42318;
-  font-weight: 700;
-}
-
-input.ng-invalid.ng-touched {
-  border-color: #b42318;
-}
-
-.field-error {
-  color: #b42318;
-  font-size: 13px;
-  font-weight: 400;
-}
-
-
-@media (max-width: 720px) {
-  .auth-page {
-    padding: 18px;
-  }
-
-  .auth-panel {
-    padding: 28px;
-  }
-
+@media (max-width: 680px) {
   .form-grid {
     grid-template-columns: 1fr;
-  }
-
-  .full-row {
-    grid-column: auto;
   }
 }

@@ -1,112 +1,105 @@
 /* You can add global styles to this file, and also import other style files */
+:root {
+  --color-page: #f6f3ee;
+  --color-surface: #ffffff;
+  --color-text: #211f1b;
+  --color-muted: #5f5a51;
+  --color-border: rgba(33, 31, 27, 0.1);
+  --color-primary: #1f6f5b;
+  --color-primary-soft: rgba(31, 111, 91, 0.14);
+  --color-accent: #c45340;
+  --color-accent-soft: rgba(196, 83, 64, 0.12);
+  --shadow-soft: 0 16px 42px rgba(33, 31, 27, 0.07);
+  --radius-sm: 8px;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--color-page);
+  color: var(--color-text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
 
 .admin-page {
   min-height: 100vh;
   padding: 32px;
-  background: #f4f7fb;
+  background:
+    linear-gradient(110deg, var(--color-primary-soft), var(--color-accent-soft)),
+    var(--color-page);
 }
 
 .admin-panel {
   max-width: 1000px;
   margin: 0 auto;
   padding: 36px;
-  border: 1px solid #d8e0ea;
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 18px 50px rgba(26, 43, 73, 0.08);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
 }
 
 .error-message {
-  color: #b42318;
-  font-weight: 700;
+  color: var(--color-accent);
+  font-weight: 800;
 }
 
 .muted {
-  color: #8a96a8;
+  color: var(--color-muted);
   font-size: 14px;
 }
 
-/* Status badges */
-.badge {
+.back-link {
   display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--color-primary);
+  font-weight: 800;
+  text-decoration: none;
 }
 
-.badge[data-status='PENDING'] {
-  background: #fff4e0;
-  color: #9a5b00;
-}
-
-.badge[data-status='APPROVED'] {
-  background: #e6f4ea;
-  color: #116329;
-}
-
-.badge[data-status='REJECTED'] {
-  background: #fdecea;
-  color: #b42318;
-}
-
-/* Κουμπιά */
 .btn {
   min-height: 34px;
   padding: 0 14px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font: inherit;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
 }
 
-.btn + .btn {
-  margin-left: 8px;
-}
-
+.btn.primary,
 .btn.approve {
-  background: #116329;
+  background: var(--color-primary);
   color: #ffffff;
-}
-
-.btn.approve:not(:disabled):hover {
-  background: #0d4f21;
 }
 
 .btn.reject {
-  background: #b42318;
+  background: var(--color-accent);
   color: #ffffff;
 }
 
-.btn.reject:not(:disabled):hover {
-  background: #912018;
-}
-
 .btn.revoke {
-  background: #ffffff;
-  border-color: #b42318;
-  color: #b42318;
+  background: var(--color-surface);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .btn.revoke:not(:disabled):hover {
-  background: #fdecea;
+  background: var(--color-accent-soft);
 }
 
 .btn:disabled {
   cursor: not-allowed;
   opacity: 0.55;
-}
-
-/* Κύριο κουμπί (New message, Send, Reply). Δουλεύει και σε <a>. */
-.btn.primary {
-  background: #2257c8;
-  color: #ffffff;
-}
-
-.btn.primary:not(:disabled):hover {
-  background: #1a49ad;
 }
 
 a.btn {
@@ -115,17 +108,16 @@ a.btn {
   text-decoration: none;
 }
 
-/* Μετρητής αδιάβαστων: tab εισερχομένων, αργότερα και navbar. */
 .unread-badge {
   display: inline-block;
   min-width: 20px;
   margin-left: 6px;
   padding: 2px 6px;
   border-radius: 999px;
-  background: #b42318;
+  background: var(--color-accent);
   color: #ffffff;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 16px;
   text-align: center;
 }
@@ -133,9 +125,13 @@ a.btn {
 .back-link {
   display: inline-block;
   margin-bottom: 24px;
-  color: #2257c8;
-  font-weight: 700;
+  color: var(--color-primary);
+  font-weight: 800;
   text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
 }
 
 /* Κινητό */

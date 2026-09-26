@@ -1,6 +1,6 @@
 h1 {
   margin: 0;
-  color: #172033;
+  color: var(--color-text);
   font-size: 30px;
   overflow-wrap: anywhere;
 }
@@ -11,32 +11,38 @@ h1 {
   gap: 10px 24px;
   margin: 24px 0 0;
   padding-top: 20px;
-  border-top: 1px solid #e6ebf2;
+  border-top: 1px solid var(--color-border);
 }
 
 .details dt {
-  color: #5e6b7e;
-  font-weight: 700;
+  color: var(--color-muted);
+  font-weight: 800;
 }
 
 .details dd {
   margin: 0;
-  color: #223047;
+  color: var(--color-text);
 }
 
 .content {
   margin: 24px 0 0;
   padding: 20px;
-  border-radius: 8px;
-  background: #f4f7fb;
-  color: #223047;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-soft);
+  color: var(--color-text);
   line-height: 1.6;
-  white-space: pre-wrap;  /* κρατάει τις αλλαγές γραμμής που έγραψε ο χρήστης */
+  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
 .details-actions {
+  display: flex;
+  gap: 8px;
   margin-top: 24px;
+}
+
+.details-actions .btn + .btn {
+  margin-left: 0;
 }
 
 @media (max-width: 720px) {
@@ -47,5 +53,9 @@ h1 {
 
   .details dd {
     margin-bottom: 10px;
+  }
+
+  .details-actions {
+    flex-wrap: wrap;
   }
 }

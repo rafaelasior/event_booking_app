@@ -1,16 +1,127 @@
-<main class="welcome-page">
-  <section class="hero">
-    <p class="eyebrow">Event Booking Platform</p>
+<main class="home-page">
+  <nav class="top-nav">
+    <a routerLink="/" class="brand">Event Booking</a>
 
-    <h1>Find and manage events</h1>
-
-    <p class="description">
-      Discover events, create bookings, and manage registrations from one web app.
-    </p>
-
-    <div class="actions">
-      <a routerLink="/login" class="primary-button">Login</a>
-      <a routerLink="/register" class="secondary-button">Register</a>
+    <div class="nav-actions">
+      <a routerLink="/login">Sign in</a>
+      <a routerLink="/register" class="primary-link">Register</a>
     </div>
+  </nav>
+
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Discover events near you</p>
+      <h1>Find workshops, concerts, seminars and more.</h1>
+      <p class="hero-copy">
+        Browse published events as a guest, then sign in when you are ready to book.
+      </p>
+    </div>
+  </section>
+
+  <section class="browse-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Browse</p>
+        <h2>Available events</h2>
+      </div>
+
+      <button type="button" class="ghost-button" (click)="clearFilters()">
+        Clear filters
+      </button>
+    </div>
+
+    <form class="filters" (ngSubmit)="loadEvents()">
+      <label>
+        Search
+        <input
+          type="search"
+          name="search"
+          placeholder="Title or keyword"
+          [(ngModel)]="filters.search"
+        />
+      </label>
+
+      <label>
+        City
+        <input
+          type="text"
+          name="city"
+          placeholder="Athens"
+          [(ngModel)]="filters.city"
+        />
+      </label>
+
+      <label>
+        Type
+        <select name="eventType" [(ngModel)]="filters.eventType">
+          <option value="">All types</option>
+          @for (eventType of eventTypes; track eventType) {
+            <option [value]="eventType">{{ eventType }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        Category
+        <select name="categoryId" [(ngModel)]="filters.categoryId">
+          <option value="">All categories</option>
+          @for (category of categories(); track category.id) {
+            <option [value]="category.id">{{ category.name }}</option>
+          }
+        </select>
+      </label>
+
+      <button type="submit">Search</button>
+    </form>
+
+    @if (loading()) {
+      <p class="state-message">Loading events...</p>
+    }
+
+    @if (errorMessage()) {
+      <p class="error-message">{{ errorMessage() }}</p>
+    }
+
+    @if (!loading() && !events().length) {
+      <p class="state-message">No events found.</p>
+    }
+
+    @if (events().length) {
+      <div class="events-list">
+        @for (event of events(); track event.id) {
+          <article class="event-card">
+            <div class="event-main">
+              <div>
+                <p class="event-meta">
+                  {{ event.eventType }} · {{ event.city }}
+                </p>
+                <h3>{{ event.title }}</h3>
+
+                @if (categoryNames(event)) {
+                  <p class="categories">{{ categoryNames(event) }}</p>
+                }
+
+                <p class="description">{{ event.description }}</p>
+              </div>
+
+              <div class="event-side">
+                <p class="date">{{ formatDate(event.startDateTime) }}</p>
+                <p class="venue">{{ event.venue }}</p>
+
+                @if (minimumPrice(event) !== null) {
+                  <p class="price">From €{{ minimumPrice(event) }}</p>
+                }
+
+                <p class="seats">{{ availableSeats(event) }} seats available</p>
+
+                <a [routerLink]="['/events', event.id]" class="details-link">
+                  View details
+                </a>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    }
   </section>
 </main>

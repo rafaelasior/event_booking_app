@@ -1,6 +1,6 @@
 h1 {
   margin: 0;
-  color: #172033;
+  color: var(--color-text);
   font-size: 34px;
 }
 
@@ -14,18 +14,20 @@ form {
 label {
   display: grid;
   gap: 8px;
-  color: #223047;
-  font-weight: 700;
+  color: var(--color-muted);
+  font-weight: 800;
 }
 
 input,
 select,
 textarea {
-  padding: 10px 12px;
-  border: 1px solid #b8c4d4;
-  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
   font: inherit;
   font-weight: 400;
+  background: var(--color-surface);
 }
 
 input,
@@ -40,8 +42,8 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 3px solid rgba(34, 87, 200, 0.16);
-  border-color: #2257c8;
+  outline: 3px solid var(--color-primary-soft);
+  border-color: var(--color-primary);
 }
 
 form .btn {
