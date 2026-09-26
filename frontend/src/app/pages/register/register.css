@@ -111,6 +111,17 @@ button:disabled {
   font-weight: 700;
 }
 
+input.ng-invalid.ng-touched {
+  border-color: #b42318;
+}
+
+.field-error {
+  color: #b42318;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+
 @media (max-width: 720px) {
   .auth-page {
     padding: 18px;

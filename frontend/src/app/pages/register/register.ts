@@ -1,7 +1,8 @@
 import { Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { Auth } from '../../auth/auth';
+
 
 
 @Component({
@@ -31,15 +32,17 @@ export class Register {
   errorMessage = signal('');
   errorMessages = signal<string[]>([]);
 
-  
+  passwordsMatch(): boolean {
+    return this.form.password === this.form.passwordConfirmation;
+  }
 
-  submitRegister(isValid: boolean | null) {
-    console.log('submit called, valid:', isValid);
+  submitRegister(registerForm: NgForm) {
+    console.log('submit called, valid:', registerForm.valid);
     this.message.set('');
     this.errorMessage.set('');
     this.errorMessages.set([]);
 
-    if (!isValid) {
+    if (registerForm.invalid || !this.passwordsMatch()) {
       this.message.set('');
       this.errorMessage.set('Please fill all required fields correctly.');
       return;
@@ -48,7 +51,7 @@ export class Register {
     this.auth.register(this.form).subscribe({
       next: () => {
         this.message.set('Registration submitted. Please wait for admin approval.');
-        this.form = {
+        registerForm.resetForm({
           username: '',
           email: '',
           password: '',
@@ -60,7 +63,7 @@ export class Register {
           address: '',
           city: '',
           country: '',
-        };
+        });
       },
       error: (error) => {
         console.error('register failed:', error);

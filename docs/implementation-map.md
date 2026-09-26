@@ -296,10 +296,12 @@ Routes:
 
 Πρώτο επόμενο βήμα:
 
-1. Ολοκληρώνουμε το frontend validation στο register.
 2. Φτιάχνουμε admin users page για να βλέπει ο admin pending users.
 3. Συνδέουμε approve/reject buttons με τα admin backend endpoints.
 4. Μετά περνάμε στο πρώτο πραγματικό `EventsService` implementation.
+
+Έγινε - Παντελής:
+1. Ολοκληρώνουμε το frontend validation στο register.
 
 ## Debug Checklist
 

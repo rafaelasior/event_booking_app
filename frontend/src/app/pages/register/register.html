@@ -21,63 +21,125 @@
       </ul>
     }
 
-    <form #registerForm="ngForm" (ngSubmit)="submitRegister(registerForm.valid)">
+    <form #registerForm="ngForm" (ngSubmit)="submitRegister(registerForm)">
         <!-- ngSubmit είναι Angular event για submit φόρμας.   -->
       <div class="form-grid">
         <label>
           Username
-          <input required type="text" name="username" autocomplete="username" [(ngModel)]="form.username" />
+          <input required type="text" name="username" autocomplete="username" [(ngModel)]="form.username" #username="ngModel" />
           <!-- This will bind the input value to the username property in the form object ό,τι γράφεις στο input πηγαίνει στο form.username και αν αλλάξει το form.username, ενημερώνεται το input -->
+          @if (username.invalid && (username.touched || registerForm.submitted)) {
+            <small class="field-error">Username is required.</small>
+          }
         </label>
 
         <label>
           Email
-          <input required type="email" name="email" autocomplete="email" [(ngModel)]="form.email" />
+          <input required email type="email" name="email" autocomplete="email" [(ngModel)]="form.email" #email="ngModel" />
+          <!--με το #email="ngModel" αποκτάς πρόσβαση στην κατάσταση μόνο αυτού του πεδίου (email.invalid, email.touched κ.λπ.)-->
+            @if (email.invalid && (email.touched || registerForm.submitted)) {
+            <small class="field-error">
+              @if (email.errors?.['required']) {
+                Email is required.
+              } @else if (email.errors?.['email']) {
+                Please enter a valid email address.
+              }
+            </small>
+            }
         </label>
 
         <label>
           Password
-          <input required type="password" name="password" autocomplete="new-password" [(ngModel)]="form.password" />
+          <input required minlength="8" type="password" name="password" autocomplete="new-password" [(ngModel)]="form.password" #password="ngModel" />
+          @if (password.invalid && (password.touched || registerForm.submitted)) {
+            <small class="field-error">
+              @if (password.errors?.['required']) {
+                Password is required.
+              } @else if (password.errors?.['minlength']) {
+                Password must be at least 8 characters.
+              }
+            </small>
+          }
         </label>
 
         <label>
           Confirm password
-          <input required type="password" name="passwordConfirmation" autocomplete="new-password" [(ngModel)]="form.passwordConfirmation" />
+          <input required type="password" name="passwordConfirmation" autocomplete="new-password" [(ngModel)]="form.passwordConfirmation" #passwordConfirmation="ngModel" />
+          @if (passwordConfirmation.touched || registerForm.submitted) {
+            @if (passwordConfirmation.errors?.['required']) {
+              <small class="field-error">Please confirm your password.</small>
+            } @else if (!passwordsMatch()) {
+              <small class="field-error">Passwords do not match.</small>
+            }
+          }
         </label>
 
         <label>
           First name
-          <input required type="text" name="firstName" autocomplete="given-name" [(ngModel)]="form.firstName" />
+          <input required type="text" name="firstName" autocomplete="given-name" [(ngModel)]="form.firstName" #firstName="ngModel" />
+          @if (firstName.invalid && (firstName.touched || registerForm.submitted)) {
+            <small class="field-error">First name is required.</small>
+          }
         </label>
 
         <label>
           Last name
-          <input required type="text" name="lastName" autocomplete="family-name" [(ngModel)]="form.lastName" />
+          <input required type="text" name="lastName" autocomplete="family-name" [(ngModel)]="form.lastName" #lastName="ngModel" />
+          @if (lastName.invalid && (lastName.touched || registerForm.submitted)) {
+            <small class="field-error">Last name is required.</small>
+          }
         </label>
 
         <label>
           Phone
-          <input required type="tel" name="phone" autocomplete="tel" [(ngModel)]="form.phone" />
+          <input required pattern="[0-9+ ()-]{7,20}" type="tel" name="phone" autocomplete="tel" [(ngModel)]="form.phone" #phone="ngModel" />
+          @if (phone.invalid && (phone.touched || registerForm.submitted)) {
+            <small class="field-error">
+              @if (phone.errors?.['required']) {
+                Phone is required.
+              } @else if (phone.errors?.['pattern']) {
+                Phone must be 7-20 characters: digits, spaces, +, (, ) or -.
+              }
+            </small>
+          }
         </label>
 
         <label>
           AFM
-          <input required type="text" name="AFM" [(ngModel)]="form.AFM" />
+          <input required pattern="[0-9]{9}" maxlength="9" type="text" name="AFM" [(ngModel)]="form.AFM" #afm="ngModel"/>
+          @if (afm.invalid && (afm.touched || registerForm.submitted)) {
+            <small class="field-error">
+              @if (afm.errors?.['required']) {
+                AFM is required.
+              } @else if (afm.errors?.['pattern']) {
+                AFM must contain exactly 9 digits.
+              }
+            </small>
+          }
         </label>
 
         <label class="full-row">
           Address
-          <input required type="text" name="address" autocomplete="street-address" [(ngModel)]="form.address" />
+          <input required type="text" name="address" autocomplete="street-address" [(ngModel)]="form.address" #address="ngModel"/>
+          @if (address.invalid && (address.touched || registerForm.submitted)) {
+            <small class="field-error">Address is required.</small>
+          }
         </label>
 
         <label>
           City
-          <input required type="text" name="city" autocomplete="address-level2" [(ngModel)]="form.city" />
+          <input required type="text" name="city" autocomplete="address-level2" [(ngModel)]="form.city" #city="ngModel"/>
+          @if (city.invalid && (city.touched || registerForm.submitted)) {
+            <small class="field-error">City is required.</small>
+          }
         </label>
 
         <label>
           Country
-          <input required type="text" name="country" autocomplete="country-name" [(ngModel)]="form.country" />
+          <input required type="text" name="country" autocomplete="country-name" [(ngModel)]="form.country" #country="ngModel"/>
+          @if (country.invalid && (country.touched || registerForm.submitted)) {
+            <small class="field-error">Country is required.</small>
+          }
         </label>
       </div>
 
