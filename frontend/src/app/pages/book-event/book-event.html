@@ -1,0 +1,152 @@
+<main class="admin-page">
+  <section class="admin-panel">
+    @if (event(); as event) {
+      <a [routerLink]="['/events', event.id]" class="back-link">Back to event</a>
+
+      <p class="eyebrow">Book tickets</p>
+      <h1>{{ event.title }}</h1>
+      <p class="muted">
+        {{ event.startDateTime | date: 'EEEE d MMMM y, HH:mm' }} · {{ event.venue }}, {{ event.city }}
+      </p>
+
+      <ol class="steps">
+        <li [class.active]="step() === 'form'">1. Tickets</li>
+        <li [class.active]="step() === 'confirm'">2. Confirm</li>
+        <li [class.active]="step() === 'done'">3. Done</li>
+      </ol>
+
+      @if (errorMessage()) {
+        <p class="error-message">{{ errorMessage() }}</p>
+      }
+
+      @if (step() !== 'done' && bookingBlockedReason(event)) {
+        <p class="notice">{{ bookingBlockedReason(event) }}</p>
+      } @else {
+        @switch (step()) {
+          @case ('form') {
+            <form #bookingForm="ngForm" (ngSubmit)="review(bookingForm)">
+              <fieldset>
+                <legend>Ticket type</legend>
+
+                @for (ticketType of event.ticketTypes ?? []; track ticketType.id) {
+                  <label
+                    class="ticket-option"
+                    [class.selected]="form.ticketTypeId === ticketType.id"
+                    [class.sold-out]="ticketType.available === 0"
+                  >
+                    <!-- attr.disabled και όχι [disabled] γιατί το [disabled] στο ngModel θα απενεργοποιούσε όλο το group -->
+                    <input
+                      type="radio"
+                      name="ticketTypeId"
+                      required
+                      [value]="ticketType.id"
+                      [(ngModel)]="form.ticketTypeId"
+                      [attr.disabled]="ticketType.available === 0 ? '' : null"
+                    />
+                    <span class="ticket-name">{{ ticketType.name }}</span>
+                    <span class="ticket-available">
+                      {{ ticketType.available === 0 ? 'Sold out' : ticketType.available + ' available' }}
+                    </span>
+                    <span class="ticket-price">{{ ticketType.price | currency: 'EUR' }}</span>
+                  </label>
+                }
+              </fieldset>
+
+              <label>
+                Number of tickets
+                <input
+                  type="number"
+                  name="numberOfTickets"
+                  required
+                  min="1"
+                  step="1"
+                  [max]="maxTickets()"
+                  [(ngModel)]="form.numberOfTickets"
+                />
+                <span class="hint">Up to {{ maxTickets() }} for this ticket type.</span>
+              </label>
+
+              <div class="total-bar">
+                <span>
+                  {{ form.numberOfTickets || 0 }} × {{ selectedTicketType()?.price | currency: 'EUR' }}
+                </span>
+                <strong>{{ totalCost() | currency: 'EUR' }}</strong>
+              </div>
+
+              <button type="submit" class="btn primary">Continue</button>
+            </form>
+          }
+
+          @case ('confirm') {
+            <dl class="summary">
+              <div>
+                <dt>Ticket type</dt>
+                <dd>{{ selectedTicketType()?.name }}</dd>
+              </div>
+              <div>
+                <dt>Price per ticket</dt>
+                <dd>{{ selectedTicketType()?.price | currency: 'EUR' }}</dd>
+              </div>
+              <div>
+                <dt>Number of tickets</dt>
+                <dd>{{ form.numberOfTickets }}</dd>
+              </div>
+              <div class="total">
+                <dt>Total cost</dt>
+                <dd>{{ totalCost() | currency: 'EUR' }}</dd>
+              </div>
+            </dl>
+
+            <p class="warning">
+              Once you confirm, this booking is <strong>final and cannot be cancelled</strong>.
+            </p>
+
+            <div class="actions">
+              <button type="button" class="btn secondary" (click)="back()" [disabled]="submitting()">
+                Back
+              </button>
+              <button type="button" class="btn primary" (click)="confirm()" [disabled]="submitting()">
+                {{ submitting() ? 'Booking...' : 'Confirm booking' }}
+              </button>
+            </div>
+          }
+
+          @case ('done') {
+            @if (booking(); as booking) {
+              <div class="success">
+                <h2>Booking #{{ booking.id }} confirmed</h2>
+                <p>
+                  {{ booking.numberOfTickets }} × {{ booking.ticketType.name }} for
+                  <strong>{{ booking.event.title }}</strong>
+                </p>
+                <p>Total cost: <strong>{{ booking.totalCost | currency: 'EUR' }}</strong></p>
+                <p class="muted">Booked on {{ booking.time | date: 'dd/MM/yyyy HH:mm' }}</p>
+              </div>
+
+              <div class="actions">
+                <!-- Το message-compose διαβάζει ήδη τα to /event/subject -->
+                <a
+                  class="btn primary"
+                  routerLink="/messages/new"
+                  [queryParams]="{ to: booking.event.organizer.id, event: booking.event.id, subject: 'Booking #' + booking.id }"
+                >
+                  Message the organizer
+                </a>
+                <a class="btn secondary" routerLink="/bookings">My bookings</a>
+                <a class="btn secondary" [routerLink]="['/events', booking.event.id]">Back to event</a>
+              </div>
+            }
+          }
+        }
+      }
+    } @else {
+      <a routerLink="/events" class="back-link">Back to events</a>
+
+      @if (errorMessage()) {
+        <p class="error-message">{{ errorMessage() }}</p>
+      } @else {
+        <p class="muted">Loading event...</p>
+      }
+    }
+  </section>
+</main>

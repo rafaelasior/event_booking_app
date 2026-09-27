@@ -1,0 +1,77 @@
+.bookings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 34px;
+}
+
+.booking-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.booking-list li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.booking-info {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+}
+
+.event-title {
+  color: var(--color-text);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.event-title:hover {
+  color: var(--color-primary);
+}
+
+.meta {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.badge[data-status='CONFIRMED'] {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.badge[data-status='CANCELLED'] {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+@media (max-width: 720px) {
+  .bookings-header,
+  .booking-list li {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

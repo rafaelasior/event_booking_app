@@ -9,9 +9,14 @@ import { MessageDetails } from './pages/message-details/message-details';
 import { MessageCompose } from './pages/message-compose/message-compose';
 import { EventDetails } from './pages/event-details/event-details';
 import { EventsPage } from './pages/events/events';
+<<<<<<< HEAD
 import { MyEvents } from './pages/my-events/my-events';
 import { Profile } from './pages/profile/profile';
 import { EventCreate } from './pages/event-create/event-create';
+=======
+import { BookEvent } from './pages/book-event/book-event';
+import { MyBookings } from './pages/my-bookings/my-bookings';
+>>>>>>> 7ea1cca (bookings (oles oi kratiseis enos xrhsth))
 
 
 export const routes: Routes = [
@@ -28,5 +33,7 @@ export const routes: Routes = [
   { path: 'messages', component: MessagesPage },
   { path: 'messages/new', component: MessageCompose },   // ΠΡΙΝ από το :id
   { path: 'messages/:id', component: MessageDetails },
+  { path: 'events/:id/book', component: BookEvent },
+  { path: 'bookings', component: MyBookings },
 
 ];

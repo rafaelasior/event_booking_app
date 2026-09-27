@@ -1,0 +1,48 @@
+<main class="admin-page">
+  <section class="admin-panel">
+    <div class="bookings-header">
+      <h1>My bookings</h1>
+      <a routerLink="/events" class="btn primary">Browse events</a>
+    </div>
+
+    @if (errorMessage()) {
+      <p class="error-message">{{ errorMessage() }}</p>
+    }
+
+    @if (bookings().length > 0) {
+      <ul class="booking-list">
+        @for (booking of bookings(); track booking.id) {
+          <li>
+            <div class="booking-info">
+              <a class="event-title" [routerLink]="['/events', booking.event.id]">
+                {{ booking.event.title }}
+              </a>
+              <span class="meta">
+                {{ booking.event.startDateTime | date: 'dd/MM/yyyy HH:mm' }} ·
+                {{ booking.event.venue }}, {{ booking.event.city }}
+              </span>
+              <span class="meta">
+                #{{ booking.id }} · {{ booking.numberOfTickets }} × {{ booking.ticketType.name }} ·
+                {{ booking.totalCost | currency: 'EUR' }}
+              </span>
+            </div>
+
+            <span class="badge" [attr.data-status]="displayStatus(booking)">
+              {{ displayStatus(booking) }}
+            </span>
+
+            <a
+              class="btn secondary"
+              routerLink="/messages/new"
+              [queryParams]="{ to: booking.event.organizer.id, event: booking.event.id }"
+            >
+              Message organizer
+            </a>
+          </li>
+        }
+      </ul>
+    } @else if (loaded()) {
+      <p class="muted">You have no bookings yet.</p>
+    }
+  </section>
+</main>

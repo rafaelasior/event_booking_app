@@ -38,5 +38,5 @@ export class BookingsController {
     return this.bookingsService.findForEvent(eventId, request.user);
   }
 
-  // Σκόπιμα ΔΕΝ υπάρχει PATCH/DELETE: η κράτηση δεν αναιρείται μετά την υποβολή
+  //Δεν φτιάξαμε PATCH/DELETE αφού η κράτηση δεν αναιρείται μετά την υποβολή
 }
