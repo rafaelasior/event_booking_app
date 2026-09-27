@@ -106,6 +106,13 @@ export class Auth {
     }
   }
 
+  getUsername(): string | null {
+  const token = this.getToken();
+  if (!token) return null;
+  return this.getTokenPayload(token)?.username ?? null;
+}
+
+
   getRoles(): string[] {
     const token = this.getToken();
 

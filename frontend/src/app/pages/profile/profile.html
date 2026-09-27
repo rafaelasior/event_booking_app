@@ -16,11 +16,11 @@
 
     @if (auth.isLoggedIn()) {
       <div class="profile-card">
-        <div class="avatar" aria-hidden="true">U</div>
+      <div class="avatar" aria-hidden="true">{{ username()?.charAt(0)?.toUpperCase() ?? 'U' }}</div>
 
         <div>
           <p class="eyebrow">Account</p>
-          <h1>Your profile</h1>
+          <h1>{{ username() ?? 'Your profile' }}</h1>
           <p class="muted">Manage your session and account shortcuts.</p>
 
           <dl class="details">

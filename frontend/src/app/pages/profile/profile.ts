@@ -32,4 +32,9 @@ export class Profile implements OnInit {
   userId() {
     return this.auth.getUserId();
   }
+
+  username() {
+  return this.auth.getUsername();
+}
+
 }
