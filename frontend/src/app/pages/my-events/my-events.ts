@@ -13,7 +13,6 @@ export class MyEvents implements OnInit {
   events = signal<EventItem[]>([]);
   loading = signal(false);
   errorMessage = signal('');
-  busyId = signal<number | null>(null);
 
   constructor(
     private readonly eventsService: Events,
@@ -22,14 +21,15 @@ export class MyEvents implements OnInit {
 
   ngOnInit() {
     if (!this.auth.isLoggedIn()) {
+        this.errorMessage.set('Please sign in to view your events.');
+        this.loading.set(false);
         return;
     }
 
     this.loadEvents();
-    }
+  }
 
-
-
+  
   loadEvents() {
     this.loading.set(true);
     this.errorMessage.set('');
@@ -47,61 +47,6 @@ export class MyEvents implements OnInit {
     });
   }
 
-  publish(event: EventItem) {
-    this.busyId.set(event.id);
-
-    this.eventsService.publishEvent(event.id).subscribe({
-      next: () => {
-        this.busyId.set(null);
-        this.loadEvents();
-      },
-      error: (error) => {
-        console.error('failed to publish event:', error);
-        this.errorMessage.set('Could not publish event.');
-        this.busyId.set(null);
-      },
-    });
-  }
-
-  cancel(event: EventItem) {
-    this.busyId.set(event.id);
-
-    this.eventsService.cancelEvent(event.id).subscribe({
-      next: () => {
-        this.busyId.set(null);
-        this.loadEvents();
-      },
-      error: (error) => {
-        console.error('failed to cancel event:', error);
-        this.errorMessage.set('Could not cancel event.');
-        this.busyId.set(null);
-      },
-    });
-  }
-
-  delete(event: EventItem) {
-    const confirmed = confirm(`Delete "${event.title}"?`);
-
-    if (!confirmed) {
-      return;
-    }
-
-    this.busyId.set(event.id);
-
-    this.eventsService.deleteEvent(event.id).subscribe({
-      next: () => {
-        this.busyId.set(null);
-        this.loadEvents();
-      },
-      error: (error) => {
-        console.error('failed to delete event:', error);
-        this.errorMessage.set(
-          error.error?.message ?? 'Could not delete event.',
-        );
-        this.busyId.set(null);
-      },
-    });
-  }
 
   formatDate(value: string) {
     return new Intl.DateTimeFormat('en', {

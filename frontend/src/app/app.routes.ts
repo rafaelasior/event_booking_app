@@ -15,6 +15,7 @@ import { EventCreate } from './pages/event-create/event-create';
 import { BookEvent } from './pages/book-event/book-event';
 import { MyBookings } from './pages/my-bookings/my-bookings';
 import { EventManage } from './pages/event-manage/event-manage';
+import { EventBookings } from './pages/event-bookings/event-bookings';
 
 
 export const routes: Routes = [
@@ -27,6 +28,7 @@ export const routes: Routes = [
   { path: 'events/my', component: MyEvents },
   { path: 'events/:id/book', component: BookEvent },
   { path: 'events/:id/manage', component: EventManage },
+  { path: 'events/:id/bookings', component: EventBookings },
   { path: 'events/:id', component: EventDetails },
   { path: 'admin/users', component: AdminUsersPage },
   { path: 'admin/users/:id', component: AdminUserDetails },

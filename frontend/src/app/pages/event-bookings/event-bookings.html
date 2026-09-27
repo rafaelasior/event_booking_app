@@ -1,0 +1,79 @@
+<main class="event-bookings-page">
+  <nav class="top-nav">
+    <a routerLink="/" class="brand">Event Booking</a>
+
+    <div class="nav-actions">
+      <a routerLink="/events">Browse</a>
+      <a routerLink="/events/my">My Events</a>
+      <a routerLink="/bookings">My Bookings</a>
+      <a routerLink="/messages">Messages</a>
+      <a routerLink="/profile" class="profile-icon" aria-label="Profile">
+        <span aria-hidden="true">👤</span>
+      </a>
+    </div>
+  </nav>
+
+  <section class="event-bookings-shell">
+    <a routerLink="/events/my" class="back-link">Back to my events</a>
+
+    <div class="page-heading">
+      <p class="eyebrow">Organizer</p>
+      <h1>Event bookings</h1>
+      <p>View the reservations submitted for this event.</p>
+    </div>
+
+    @if (loading()) {
+      <p class="state-message">Loading bookings...</p>
+    }
+
+    @if (errorMessage()) {
+      <p class="error-message">{{ errorMessage() }}</p>
+    }
+
+    @if (!loading() && !bookings().length && !errorMessage()) {
+      <p class="state-message">No bookings have been made for this event yet.</p>
+    }
+
+    @if (bookings().length) {
+      <div class="bookings-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Attendee</th>
+              <th>Ticket</th>
+              <th>Quantity</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Booked at</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (booking of bookings(); track booking.id) {
+              <tr>
+                <td>
+                  <strong>
+                    {{ booking.attendee.firstName }} {{ booking.attendee.lastName }}
+                  </strong>
+                  <span>{{ booking.attendee.username }}</span>
+                </td>
+
+                <td>{{ booking.ticketType.name }}</td>
+                <td>{{ booking.numberOfTickets }}</td>
+                <td>€{{ booking.totalCost }}</td>
+
+                <td>
+                  <span class="badge" [attr.data-status]="booking.status">
+                    {{ booking.status }}
+                  </span>
+                </td>
+
+                <td>{{ formatDate(booking.time) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</main>

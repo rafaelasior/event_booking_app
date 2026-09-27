@@ -56,10 +56,41 @@ export class Auth {
     this.loggedIn.set(false);
   }
 
-  isLoggedIn(): boolean {
-    return this.getToken() !== null;
+  private isTokenExpired(token: string): boolean {
+    const payload = this.getTokenPayload(token);
+
+    if (!payload?.exp) {
+      return true;
+    }
+
+    return Date.now() >= payload.exp * 1000;
   }
 
+  private getTokenPayload(token: string): { exp?: number; sub?: number; username?: string; roles?: string[] } | null {
+    try {
+      const payload = token.split('.')[1];
+      const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(normalizedPayload));
+    } catch {
+      return null;
+    }
+  }
+
+  // Ελέγχει αν ο χρήστης είναι συνδεδεμένος και αν το token δεν έχει λήξει.
+  isLoggedIn() {
+    const token = this.getToken();
+    const loggedIn = this.loggedIn();
+
+    if (!token || this.isTokenExpired(token)) {
+      if (loggedIn) {
+        this.logout();
+      }
+
+      return false;
+    }
+
+    return loggedIn;
+  }
   // Διαβάζει το id του συνδεδεμένου χρήστη από το payload του JWT (πεδίο "sub").
   // Δεν ελέγχει την υπογραφή (αυτό το κάνει το backend) είναι μόνο για το UI.
   getUserId(): number | null {

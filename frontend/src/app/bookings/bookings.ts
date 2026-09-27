@@ -25,6 +25,24 @@ export type Booking = {
   };
 };
 
+export type EventBooking = {
+  id: number;
+  eventId: number;
+  ticketTypeId: number;
+  attendeeId: number;
+  time: string;
+  numberOfTickets: number;
+  totalCost: string;
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+  ticketType: { id: number; name: string; price: string };
+  attendee: {
+    id: number;
+    username: string;
+    firstName: string;
+    lastName: string;
+  };
+};
+
 export type CreateBookingRequest = {
   eventId: number;
   ticketTypeId: number;
@@ -47,5 +65,9 @@ export class Bookings {
   // GET /bookings/my
   getMine(): Observable<Booking[]> {
     return this.http.get<Booking[]>(`${this.apiUrl}/my`);
+  }
+
+  getForEvent(eventId: number): Observable<EventBooking[]> {
+    return this.http.get<EventBooking[]>(`${this.apiUrl}/event/${eventId}`);
   }
 }

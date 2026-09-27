@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Auth } from '../../auth/auth';
 
@@ -8,11 +8,20 @@ import { Auth } from '../../auth/auth';
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
-export class Profile {
+export class Profile implements OnInit {
   constructor(
     public readonly auth: Auth,
     private readonly router: Router,
   ) {}
+
+  ngOnInit() {
+    if (!this.auth.isLoggedIn()) {
+        this.router.navigate(['/login'], {
+        queryParams: { returnUrl: '/profile' },
+        });
+        return;
+    }
+  }
 
   logout() {
     this.auth.logout();

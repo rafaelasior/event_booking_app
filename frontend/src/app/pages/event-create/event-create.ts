@@ -2,8 +2,9 @@ import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Auth } from '../../auth/auth';
-import { Events } from '../../events/events';
+import { CreateTicketTypeRequest, Events } from '../../events/events';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { forkJoin, of } from 'rxjs';
 
 @Component({
   selector: 'app-event-create',
@@ -33,6 +34,14 @@ export class EventCreate {
     description: '',
   };
 
+  ticketTypes = signal<CreateTicketTypeRequest[]>([]);
+
+  ticketForm = {
+    name: '',
+    price: 0,
+    quantity: 1,
+  };
+
   eventTypes = [
     'Concert',
     'Workshop',
@@ -43,6 +52,61 @@ export class EventCreate {
     'Sports',
     'Other',
   ];
+
+  ticketQuantityTotal() {
+    return this.ticketTypes().reduce(
+      (total, ticket) => total + Number(ticket.quantity),
+      0,
+    );
+  }
+
+  addTicketType() {
+    this.errorMessage.set('');
+
+    if (!this.ticketForm.name.trim()) {
+      this.errorMessage.set('Ticket name is required.');
+      return;
+    }
+
+    if (Number(this.ticketForm.price) < 0) {
+      this.errorMessage.set('Ticket price cannot be negative.');
+      return;
+    }
+
+    if (Number(this.ticketForm.quantity) < 1) {
+      this.errorMessage.set('Ticket quantity must be at least 1.');
+      return;
+    }
+
+    const nextTotal =
+      this.ticketQuantityTotal() + Number(this.ticketForm.quantity);
+
+    if (nextTotal > Number(this.form.capacity)) {
+      this.errorMessage.set('Ticket quantities cannot exceed event capacity.');
+      return;
+    }
+
+    this.ticketTypes.update((tickets) => [
+      ...tickets,
+      {
+        name: this.ticketForm.name,
+        price: Number(this.ticketForm.price),
+        quantity: Number(this.ticketForm.quantity),
+      },
+    ]);
+
+    this.ticketForm = {
+      name: '',
+      price: 0,
+      quantity: 1,
+    };
+  }
+
+  removeTicketType(index: number) {
+    this.ticketTypes.update((tickets) =>
+      tickets.filter((_, ticketIndex) => ticketIndex !== index),
+    );
+  }
 
   constructor(
     public readonly auth: Auth,
@@ -152,8 +216,27 @@ export class EventCreate {
       description: this.form.description,
     }).subscribe({
       next: (event) => {
-        this.saving.set(false);
-        this.router.navigate(['/events', event.id]);
+        const ticketRequests = this.ticketTypes().map((ticket) =>
+          this.eventsService.createTicketType(event.id, ticket),
+        );
+
+        const createTickets$ = ticketRequests.length
+          ? forkJoin(ticketRequests)
+          : of([]);
+
+        createTickets$.subscribe({
+          next: () => {
+            this.saving.set(false);
+            this.router.navigate(['/events', event.id, 'manage']);
+          },
+          error: (error) => {
+            console.error('failed to create ticket types:', error);
+            this.errorMessage.set(
+              error.error?.message ?? 'Event was created, but tickets could not be created.',
+            );
+            this.saving.set(false);
+          },
+        });
       },
       error: (error) => {
         console.error('failed to create event:', error);

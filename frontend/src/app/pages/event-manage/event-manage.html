@@ -40,11 +40,17 @@
 
           @if (event.status === 'DRAFT') {
             <button type="button" class="btn approve" (click)="publish()">Publish</button>
+          }
+
+          @if (event.status === 'DRAFT' || (event.status === 'PUBLISHED' && event.reservedSeats === 0)) {
             <button type="button" class="btn reject" (click)="deleteEvent()">Delete</button>
           }
 
           @if (event.status === 'PUBLISHED') {
             <button type="button" class="btn reject" (click)="cancel()">Cancel</button>
+          }
+          @if (event.status === 'PUBLISHED' && event.reservedSeats > 0) {
+            <p class="muted">This event cannot be deleted because it already has bookings.</p>
           }
         </div>
       </div>
@@ -117,7 +123,14 @@
         </article>
 
         <article class="panel">
-          <h2>Ticket types</h2>
+          <div class="panel-heading">
+            <div>
+              <h2>Ticket types</h2>
+              <p class="muted">
+                Tickets: {{ ticketQuantityTotal() }} / {{ event.capacity }} capacity
+              </p>
+            </div>
+          </div>
 
           @if (event.ticketTypes?.length) {
             <div class="item-list">

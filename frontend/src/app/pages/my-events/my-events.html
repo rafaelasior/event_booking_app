@@ -59,7 +59,6 @@
               <th>Status</th>
               <th>Starts</th>
               <th>Capacity</th>
-              <th>Tickets</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -84,7 +83,6 @@
 
                 <td>{{ event.reservedSeats }} / {{ event.capacity }}</td>
 
-                <td>{{ event.ticketTypes?.length ?? 0 }}</td>
 
                 <td class="actions">
                   <a [routerLink]="['/events', event.id]" class="btn revoke">
@@ -95,36 +93,11 @@
                     Manage
                   </a>
 
-                  @if (event.status === 'DRAFT') {
-                    <button
-                      type="button"
-                      class="btn approve"
-                      [disabled]="busyId() === event.id"
-                      (click)="publish(event)"
-                    >
-                      Publish
-                    </button>
+                  <a [routerLink]="['/events', event.id, 'bookings']" class="btn revoke">
+                    Bookings
+                  </a>
 
-                    <button
-                      type="button"
-                      class="btn reject"
-                      [disabled]="busyId() === event.id"
-                      (click)="delete(event)"
-                    >
-                      Delete
-                    </button>
-                  }
-
-                  @if (event.status === 'PUBLISHED') {
-                    <button
-                      type="button"
-                      class="btn reject"
-                      [disabled]="busyId() === event.id"
-                      (click)="cancel(event)"
-                    >
-                      Cancel
-                    </button>
-                  }
+                  
                 </td>
               </tr>
             }

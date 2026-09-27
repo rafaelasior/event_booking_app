@@ -283,6 +283,19 @@ export class EventManage implements OnInit {
     });
   }
 
+  ticketQuantityTotal() {
+    const event = this.event();
+
+    if (!event?.ticketTypes) {
+      return 0;
+    }
+
+    return event.ticketTypes.reduce(
+      (total, ticket) => total + Number(ticket.quantity),
+      0,
+    );
+  }
+
   deleteTicketType(ticketType: TicketType) {
     const event = this.event();
 

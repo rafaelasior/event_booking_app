@@ -268,6 +268,20 @@ export class EventsService {
     this.ensureEventIsEditable(event);
     this.validateDateRange(event.startDateTime, event.endDateTime);
 
+    const ticketQuantityTotal = await this.getTicketQuantityTotal(id);
+
+    if (ticketQuantityTotal === 0) {
+      throw new BadRequestException(
+        'Event must have at least one ticket type before publishing',
+      );
+    }
+
+    if (ticketQuantityTotal !== event.capacity) {
+      throw new BadRequestException(
+        'Total ticket quantity must equal event capacity before publishing',
+      );
+    }
+
     if (event.capacity <= event.reservedSeats) {
       throw new BadRequestException('Event has no available capacity');
     }
