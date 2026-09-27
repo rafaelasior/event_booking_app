@@ -2,7 +2,11 @@
   <section class="admin-panel">
     <h1>Users</h1>
     <p class="subtitle">Approve or reject registration requests.</p>
-
+    <div class="export-actions">
+      <button class="btn primary" [disabled]="exporting() !== null" (click)="exportEvents('xml')">Export XML</button>
+      <button class="btn primary" [disabled]="exporting() !== null" (click)="exportEvents('json')">Export JSON</button>
+    </div>
+    
     @if (errorMessage()) {
       <p class="error-message">{{ errorMessage() }}</p>
     }
