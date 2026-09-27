@@ -98,15 +98,34 @@
             }
 
             @if (event.status === 'PUBLISHED') {
-              <a routerLink="/login" class="book-link">Sign in to book</a>
+              @if (auth.isLoggedIn()) {
+                <a [routerLink]="['/events', event.id, 'book']" class="book-link">
+                  Book
+                </a>
+              } @else {
+                <a
+                  routerLink="/login"
+                  [queryParams]="{ returnUrl: '/events/' + event.id + '/book' }"
+                  class="book-link"
+                >
+                  Sign in to book
+                </a>
+              }
             } @else {
               <p class="status-note">This event is {{ event.status }}.</p>
             }
           </div>
 
-          @if (event.latitude !== null && event.longitude !== null) {
-            <div class="side-card">
+          @if (mapPreviewUrl(event)) {
+            <div class="side-card map-card">
               <p class="label">Map</p>
+
+              <iframe
+                title="Event location map"
+                [src]="mapPreviewUrl(event)"
+                loading="lazy"
+              ></iframe>
+
               <a
                 class="map-link"
                 [href]="'https://www.openstreetmap.org/?mlat=' + event.latitude + '&mlon=' + event.longitude + '#map=15/' + event.latitude + '/' + event.longitude"

@@ -39,7 +39,14 @@ export class BookEvent implements OnInit {
   ngOnInit() {
     // Ο επισκέπτης δεν κάνει κράτηση. Το backend θα έδινε 401 έτσι κι αλλιώς.
     if (!this.auth.isLoggedIn()) {
-      this.router.navigate(['/login']);
+      const id = this.route.snapshot.paramMap.get('id');
+
+      this.router.navigate(['/login'], {
+        queryParams: {
+          returnUrl: `/events/${id}/book`,
+        },
+      });
+
       return;
     }
 

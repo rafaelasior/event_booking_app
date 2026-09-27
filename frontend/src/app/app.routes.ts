@@ -24,13 +24,13 @@ export const routes: Routes = [
   { path: 'events', component: EventsPage },
   { path: 'events/create', component: EventCreate },
   { path: 'events/my', component: MyEvents },
+  { path: 'events/:id/book', component: BookEvent },
   { path: 'events/:id', component: EventDetails },
   { path: 'admin/users', component: AdminUsersPage },
   { path: 'admin/users/:id', component: AdminUserDetails },
   { path: 'messages', component: MessagesPage },
   { path: 'messages/new', component: MessageCompose },   // ΠΡΙΝ από το :id
   { path: 'messages/:id', component: MessageDetails },
-  { path: 'events/:id/book', component: BookEvent },
   { path: 'bookings', component: MyBookings },
 
 ];

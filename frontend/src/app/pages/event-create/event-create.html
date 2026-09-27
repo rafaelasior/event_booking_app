@@ -92,6 +92,16 @@
               }
           </div>
 
+          @if (mapPreviewUrl()) {
+            <div class="map-preview full-row">
+              <iframe
+                title="Event location preview"
+                [src]="mapPreviewUrl()"
+                loading="lazy"
+              ></iframe>
+            </div>
+          }
+
           <button
               type="button"
               class="secondary-button"

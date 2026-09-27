@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Auth } from '../../auth/auth';
 import { Events } from '../../events/events';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-event-create',
@@ -47,55 +48,79 @@ export class EventCreate {
     public readonly auth: Auth,
     private readonly eventsService: Events,
     private readonly router: Router,
+    private readonly sanitizer: DomSanitizer,
   ) {}
 
   findLocation() {
-  this.locationMessage.set('');
+    this.locationMessage.set('');
 
-  const query = [
-      this.form.venue,
-      this.form.address,
-      this.form.city,
-      this.form.country,
-  ]
-      .filter(Boolean)
-      .join(', ');
+    const query = [
+        this.form.venue,
+        this.form.address,
+        this.form.city,
+        this.form.country,
+    ]
+        .filter(Boolean)
+        .join(', ');
 
-  if (!query) {
-      this.locationMessage.set('Fill venue, address, city or country first.');
-      return;
+    if (!query) {
+        this.locationMessage.set('Fill venue, address, city or country first.');
+        return;
+    }
+
+    this.locationLoading.set(true);
+
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
+
+    fetch(url, {
+        headers: {
+        Accept: 'application/json',
+        },
+    })
+        .then((response) => response.json())
+        .then((results) => {
+        if (!results.length) {
+            this.locationMessage.set('Location was not found. Try a more specific address.');
+            return;
+        }
+
+        const result = results[0];
+
+        this.form.latitude = result.lat;
+        this.form.longitude = result.lon;
+
+        this.locationMessage.set('Location found and coordinates were filled.');
+        })
+        .catch((error) => {
+        console.error('failed to find location:', error);
+        this.locationMessage.set('Could not find location.');
+        })
+        .finally(() => {
+        this.locationLoading.set(false);
+        });
   }
 
-  this.locationLoading.set(true);
+  mapPreviewUrl(): SafeResourceUrl | null {
+    if (!this.form.latitude || !this.form.longitude) {
+      return null;
+    }
 
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
+    const lat = Number(this.form.latitude);
+    const lon = Number(this.form.longitude);
+    const delta = 0.01;
 
-  fetch(url, {
-      headers: {
-      Accept: 'application/json',
-      },
-  })
-      .then((response) => response.json())
-      .then((results) => {
-      if (!results.length) {
-          this.locationMessage.set('Location was not found. Try a more specific address.');
-          return;
-      }
+    const bbox = [
+      lon - delta,
+      lat - delta,
+      lon + delta,
+      lat + delta,
+    ].join(',');
 
-      const result = results[0];
+    const url =
+      `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}` +
+      `&layer=mapnik&marker=${lat},${lon}`;
 
-      this.form.latitude = result.lat;
-      this.form.longitude = result.lon;
-
-      this.locationMessage.set('Location found and coordinates were filled.');
-      })
-      .catch((error) => {
-      console.error('failed to find location:', error);
-      this.locationMessage.set('Could not find location.');
-      })
-      .finally(() => {
-      this.locationLoading.set(false);
-      });
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
   submit(isValid: boolean | null) {

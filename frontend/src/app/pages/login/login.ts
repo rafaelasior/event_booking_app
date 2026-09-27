@@ -1,5 +1,5 @@
 import { Component, signal } from '@angular/core';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Auth } from '../../auth/auth';
 
@@ -14,7 +14,7 @@ export class Login {
     username: '',
     password: '',
   };
-  constructor(private readonly auth: Auth, private readonly router: Router) {}
+  constructor(private readonly auth: Auth, private readonly router: Router, private readonly route: ActivatedRoute) {}
 
   errorMessage= signal('');
 
@@ -26,7 +26,8 @@ export class Login {
     this.auth.login(this.form).subscribe({
       next: (response) => {
         this.auth.saveToken(response.access_token);
-        this.router.navigateByUrl('/events');
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+        this.router.navigateByUrl(returnUrl ?? '/events');
       },
       error: (error) => {
         const backendMessage = error.error?.message;

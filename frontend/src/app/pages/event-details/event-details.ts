@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Events, EventItem } from '../../events/events';
 import { Auth } from '../../auth/auth';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-event-details',
@@ -18,6 +19,7 @@ export class EventDetails implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly eventsService: Events,
     public readonly auth: Auth,
+    private readonly sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit() {
@@ -78,4 +80,27 @@ export class EventDetails implements OnInit {
       ...event.ticketTypes.map((ticketType) => Number(ticketType.price)),
     );
   }
+
+  mapPreviewUrl(event: EventItem): SafeResourceUrl | null {
+    if (event.latitude === null || event.longitude === null) {
+      return null;
+    }
+
+    const lat = event.latitude;
+    const lon = event.longitude;
+    const delta = 0.01;
+
+    const bbox = [
+      lon - delta,
+      lat - delta,
+      lon + delta,
+      lat + delta,
+    ].join(',');
+
+    const url =
+      `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}` +
+      `&layer=mapnik&marker=${lat},${lon}`;
+
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+}
 }
