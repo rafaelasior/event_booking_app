@@ -74,6 +74,28 @@
   border-radius: var(--radius-sm);
 }
 
+.cover-image,
+.photo-gallery img {
+  cursor: zoom-in;
+}
+
+.photo-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.85);
+  cursor: zoom-out;
+}
+
+.photo-viewer img {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+}
+
 
 .event-meta,
 .categories,

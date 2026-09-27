@@ -35,10 +35,11 @@
       <article class="event-layout">
         <div class="event-main">
           @if (event.photos?.length) {
-            <img
+            <img 
               class="cover-image"
               [src]="event.photos?.[0]?.filePath"
               [alt]="event.title"
+              (click)="openPhoto(event.photos?.[0]?.filePath)"
             />
           } @else {
             <div class="cover-placeholder">
@@ -48,7 +49,7 @@
           @if (event.photos && event.photos.length > 1) {
           <div class="photo-gallery">
             @for (photo of event.photos.slice(1); track photo.id) {
-              <img [src]="photo.filePath" [alt]="event.title" />
+              <img [src]="photo.filePath" [alt]="event.title" (click)="openPhoto(photo.filePath)" />
             }
           </div>
           }
@@ -148,4 +149,9 @@
       </article>
     }
   </section>
+    @if (selectedPhoto(); as photo) {
+    <div class="photo-viewer" (click)="closePhoto()">
+      <img [src]="photo" alt="" />
+    </div>
+  }
 </main>

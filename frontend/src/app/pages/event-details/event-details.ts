@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, HostListener } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Events, EventItem } from '../../events/events';
 import { Auth } from '../../auth/auth';
@@ -14,6 +14,8 @@ export class EventDetails implements OnInit {
   event = signal<EventItem | null>(null);
   loading = signal(false);
   errorMessage = signal('');
+  selectedPhoto = signal<string | null>(null);
+
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -36,6 +38,17 @@ export class EventDetails implements OnInit {
   logout() {
     this.auth.logout();
   }
+  
+  openPhoto(filePath: string | undefined) {
+    this.selectedPhoto.set(filePath ?? null);
+  }
+
+  // κλείνει και με το πλήκτρο Esc
+  @HostListener('document:keydown.escape')
+  closePhoto() {
+    this.selectedPhoto.set(null);
+  }
+
 
   loadEvent(id: number) {
     this.loading.set(true);
