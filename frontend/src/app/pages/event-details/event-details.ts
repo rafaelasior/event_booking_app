@@ -3,10 +3,11 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Events, EventItem } from '../../events/events';
 import { Auth } from '../../auth/auth';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { MessagesLink } from '../../shared/messages-link/messages-link';
 
 @Component({
   selector: 'app-event-details',
-  imports: [RouterLink],
+  imports: [RouterLink, MessagesLink],
   templateUrl: './event-details.html',
   styleUrl: './event-details.css',
 })

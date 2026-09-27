@@ -9,11 +9,12 @@ import {
 } from '../../events/events';
 import { Auth } from '../../auth/auth';
 import { Recommendations } from '../../recommendations/recommendations';
+import { MessagesLink } from '../../shared/messages-link/messages-link';
 
 
 @Component({
   selector: 'app-welcome',
-  imports: [RouterLink, FormsModule],
+  imports: [RouterLink, FormsModule, MessagesLink],
   templateUrl: './welcome.html',
   styleUrl: './welcome.css',
 })

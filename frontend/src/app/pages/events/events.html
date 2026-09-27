@@ -8,7 +8,7 @@
       @if (auth.isLoggedIn()) {
         <a routerLink="/events/my">My Events</a>
         <a routerLink="/bookings">My Bookings</a>
-        <a routerLink="/messages">Messages</a>
+        <app-messages-link />
         @if (auth.isAdmin()) {
           <a routerLink="/admin/users">Users</a>
         }
@@ -81,7 +81,7 @@
       }
     </div>
 
-    <form class="filters" (ngSubmit)="loadEvents()">
+    <form class="filters" (ngSubmit)="loadEvents(1)">
       <label>
         Search
         <input
@@ -185,6 +185,18 @@
           @for (event of events(); track event.id) {
             <article class="event-card">
               <div class="event-main">
+                @if (eventPhotoUrl(event)) {
+                  <img
+                    class="event-photo"
+                    [src]="eventPhotoUrl(event)"
+                    [alt]="event.title"
+                  />
+                } @else {
+                  <div class="event-photo event-photo-placeholder">
+                    <span>{{ event.eventType }}</span>
+                  </div>
+                }
+
                 <div>
                   <p class="event-meta">
                     {{ event.eventType }} · {{ event.city }}
@@ -217,6 +229,30 @@
             </article>
           }
         </div>
+
+        @if (totalPages() > 1) {
+          <div class="pagination" aria-label="Events pagination">
+            <button
+              type="button"
+              class="ghost-button"
+              [disabled]="page() === 1 || loading()"
+              (click)="previousPage()"
+            >
+              Previous
+            </button>
+
+            <span>Page {{ page() }} of {{ totalPages() }} · {{ totalEvents() }} events</span>
+
+            <button
+              type="button"
+              class="ghost-button"
+              [disabled]="page() === totalPages() || loading()"
+              (click)="nextPage()"
+            >
+              Next
+            </button>
+          </div>
+        }
       }
     } @else {
       @if (recommendationsLoading()) {
@@ -236,6 +272,18 @@
           @for (event of recommendedEvents(); track event.id) {
             <article class="event-card recommended-card">
               <div class="event-main">
+                @if (eventPhotoUrl(event)) {
+                  <img
+                    class="event-photo"
+                    [src]="eventPhotoUrl(event)"
+                    [alt]="event.title"
+                  />
+                } @else {
+                  <div class="event-photo event-photo-placeholder">
+                    <span>{{ event.eventType }}</span>
+                  </div>
+                }
+
                 <div>
                   <p class="event-meta">
                     {{ event.eventType }} · {{ event.city }}

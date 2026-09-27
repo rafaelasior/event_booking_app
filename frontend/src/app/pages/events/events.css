@@ -167,8 +167,34 @@ h1 {
 
 .event-main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-columns: 190px minmax(0, 1fr) 260px;
   gap: 22px;
+  align-items: stretch;
+}
+
+.event-photo {
+  width: 100%;
+  min-height: 150px;
+  height: 100%;
+  max-height: 210px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+  background: var(--color-primary-soft);
+}
+
+.event-photo-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.event-photo-placeholder span {
+  padding: 12px;
 }
 
 .event-meta,
@@ -232,6 +258,21 @@ h1 {
   justify-content: flex-end;
 }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 20px;
+  color: var(--color-muted);
+  font-weight: 800;
+}
+
+.pagination .ghost-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .mode-toggle {
   display: flex;
   gap: 8px;
@@ -253,6 +294,11 @@ h1 {
 
   .event-main {
     grid-template-columns: 1fr;
+  }
+
+  .event-photo {
+    height: 210px;
+    max-height: none;
   }
 
   .event-side {

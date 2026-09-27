@@ -1,20 +1,23 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Auth } from '../../auth/auth';
-import { CreateTicketTypeRequest, Events } from '../../events/events';
+import { Category, CreateTicketTypeRequest, Events } from '../../events/events';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin } from 'rxjs';
+import { MessagesLink } from '../../shared/messages-link/messages-link';
 
 @Component({
   selector: 'app-event-create',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, MessagesLink],
   templateUrl: './event-create.html',
   styleUrl: './event-create.css',
 })
-export class EventCreate {
+export class EventCreate implements OnInit {
   errorMessage = signal('');
   saving = signal(false);
+  categories = signal<Category[]>([]);
+  selectedCategoryIds: Record<number, boolean> = {};
 
   locationLoading = signal(false);
   locationMessage = signal('');
@@ -115,6 +118,23 @@ export class EventCreate {
     private readonly sanitizer: DomSanitizer,
   ) {}
 
+  ngOnInit() {
+    this.loadCategories();
+  }
+
+  loadCategories() {
+    this.eventsService.getCategories().subscribe({
+      next: (categories) => this.categories.set(categories),
+      error: (error) => console.error('failed to load categories:', error),
+    });
+  }
+
+  selectedCategories() {
+    return Object.entries(this.selectedCategoryIds)
+      .filter(([, selected]) => selected)
+      .map(([categoryId]) => Number(categoryId));
+  }
+
   findLocation() {
     this.locationMessage.set('');
 
@@ -199,6 +219,13 @@ export class EventCreate {
       return;
     }
 
+    const categoryIds = this.selectedCategories();
+
+    if (!categoryIds.length) {
+      this.errorMessage.set('Please select at least one category.');
+      return;
+    }
+
     this.saving.set(true);
 
     this.eventsService.createEvent({
@@ -220,19 +247,20 @@ export class EventCreate {
           this.eventsService.createTicketType(event.id, ticket),
         );
 
-        const createTickets$ = ticketRequests.length
-          ? forkJoin(ticketRequests)
-          : of([]);
+        const setupRequests = [
+          ...ticketRequests,
+          this.eventsService.setEventCategories(event.id, { categoryIds }),
+        ];
 
-        createTickets$.subscribe({
+        forkJoin(setupRequests).subscribe({
           next: () => {
             this.saving.set(false);
             this.router.navigate(['/events', event.id, 'manage']);
           },
           error: (error) => {
-            console.error('failed to create ticket types:', error);
+            console.error('failed to finish event setup:', error);
             this.errorMessage.set(
-              error.error?.message ?? 'Event was created, but tickets could not be created.',
+              error.error?.message ?? 'Event was created, but setup could not be completed.',
             );
             this.saving.set(false);
           },

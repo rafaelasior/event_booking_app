@@ -27,7 +27,13 @@ export class Login {
       next: (response) => {
         this.auth.saveToken(response.access_token);
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-        this.router.navigateByUrl(returnUrl ?? '/events');
+
+        if (returnUrl) {
+          this.router.navigateByUrl(returnUrl);
+          return;
+        }
+
+        this.router.navigateByUrl(this.auth.isAdmin() ? '/admin/users' : '/events');
       },
       error: (error) => {
         const backendMessage = error.error?.message;

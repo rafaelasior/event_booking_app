@@ -1,10 +1,11 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { EventBooking, Bookings } from '../../bookings/bookings';
+import { MessagesLink } from '../../shared/messages-link/messages-link';
 
 @Component({
   selector: 'app-event-bookings',
-  imports: [RouterLink],
+  imports: [RouterLink, MessagesLink],
   templateUrl: './event-bookings.html',
   styleUrl: './event-bookings.css',
 })

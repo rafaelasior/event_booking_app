@@ -1,0 +1,6 @@
+<a routerLink="/messages" class="messages-link">
+  Messages
+  @if (messagesService.unreadCount() > 0) {
+    <span class="unread-dot" aria-label="You have unread messages"></span>
+  }
+</a>

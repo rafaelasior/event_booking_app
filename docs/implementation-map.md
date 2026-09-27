@@ -22,7 +22,7 @@ Database source of truth:
 - Τα protected backend endpoints ελέγχουν JWT και δικαιώματα. Το frontend βοηθάει το UX, αλλά δεν θεωρείται security boundary.
 - Τα IDs από URL params/query params φτάνουν ως strings και μετατρέπονται σε numbers πριν δοθούν στην Prisma.
 - Τα photos αποθηκεύονται ως path/URL references στη βάση. Υπάρχει και image upload endpoint που αποθηκεύει αρχείο στο backend και κρατά το path.
-- Για local development δεν υπάρχει SSL/TLS. Για τελική παρουσίαση/production θα πρέπει να χρησιμοποιηθεί HTTPS από hosting/reverse proxy.
+- Για local development χρησιμοποιείται HTTPS με self-signed certificates από τον φάκελο `certs/`. Για production χρειάζεται κανονικό HTTPS από hosting/reverse proxy.
 
 ## Backend Map
 
@@ -146,7 +146,7 @@ Backend endpoints:
 Υλοποιήθηκαν:
 
 - Event flow: create, list, details, update/manage.
-- Public browsing με filters: `status`, `city`, `eventType`, `search`, `categoryId`, `dateFrom`, `dateTo`, `minPrice`, `maxPrice`.
+- Public browsing με filters: `status`, `city`, `eventType`, `search`, `categoryId`, `dateFrom`, `dateTo`, `minPrice`, `maxPrice`, μαζί με pagination.
 - Organizer list μέσω `GET /events/my`.
 - Status actions: publish, cancel, delete.
 - Ticket types: create, update, delete.
@@ -159,6 +159,7 @@ Backend endpoints:
 - My Events page ως organizer dashboard με `View`, `Manage`, `Bookings`.
 - Event bookings page για να βλέπει ο organizer τις κρατήσεις συγκεκριμένου event.
 - Admin-only export buttons σε XML/JSON από το events page.
+- Paginated browsing στο `/events` για πιο εύχρηστη πλοήγηση.
 
 Σχεδιαστικές αποφάσεις:
 
@@ -176,7 +177,7 @@ Validation / κανόνες:
 - Capacity πρέπει να είναι θετικός αριθμός και όχι μικρότερο από reserved seats.
 - Μόνο organizer/admin μπορεί να διαχειριστεί event, ticket types, categories και photos του event.
 - Cancelled/completed events δεν επιτρέπεται να αλλάξουν.
-- Publish απαιτεί τουλάχιστον ένα ticket type και συνολικό `ticketType.quantity` ίσο με `event.capacity`.
+- Publish απαιτεί τουλάχιστον μία category, τουλάχιστον ένα ticket type και συνολικό `ticketType.quantity` ίσο με `event.capacity`.
 - Δημιουργία/update ticket type δεν επιτρέπει συνολικό quantity μεγαλύτερο από capacity.
 - Update ticket type δεν μπορεί να μειώσει quantity κάτω από ήδη reserved tickets.
 - Delete event δεν επιτρέπεται μετά την πρώτη κράτηση.
@@ -373,10 +374,10 @@ Status: main flows implemented; polish/testing συνεχίζονται.
 - Login/register με backend connection και messages.
 - JWT storage και HTTP interceptor για `Authorization: Bearer`.
 - Auth state με `signal`, token expiration check και logout όταν το token λήξει.
-- Login redirect με `returnUrl`.
+- Login redirect με `returnUrl`. Αν δεν υπάρχει `returnUrl`, ο admin οδηγείται στο `/admin/users`, ενώ οι απλοί χρήστες στο `/events`.
 - Profile page με logout.
 - Admin users list/details/approval UI.
-- Events browsing page με search/filter UI.
+- Events browsing page με search/filter UI και pagination.
 - Event details page με map preview και booking CTA.
 - Create event page με geocoding/map, ticket type builder και capacity validation στο frontend.
 - My Events organizer dashboard.
@@ -423,19 +424,19 @@ Build / testing:
 - Τα generated specs/tests χρειάζονται update επειδή πολλά services έχουν dependencies όπως `PrismaService`.
 - Υπάρχουν npm audit warnings που αποφασίστηκε να μείνουν προσωρινά μέχρι συζήτηση με την ομάδα.
 - File upload υπάρχει για event photos, αλλά θέλει τελικό browser testing μαζί με την προβολή εικόνων.
-- SSL/TLS δεν έχει υλοποιηθεί τοπικά. Πρέπει να καλυφθεί σε deployment/report.
+- SSL/TLS έχει υλοποιηθεί τοπικά με self-signed certificates. Για hosted deployment χρειάζεται κανονικό certificate/HTTPS configuration.
 - Χρειάζεται τελικό end-to-end testing σε booking + event bookings + messaging.
 - Θέλει τελικό cleanup των shared CSS ώστε να μειωθεί duplication σε pages.
 - Recommendations υπάρχουν, αλλά η ποιότητά τους θα βελτιώνεται όσο αυξάνονται πραγματικά views/bookings στο app.
 
 ## Επόμενα Βήματα
 
-1. Backend build και manual test για publish rule: `sum(ticket quantities) === capacity`.
+1. Manual test για publish rule: category exists και `sum(ticket quantities) === capacity`.
 2. Manual test για My Events -> Bookings με πραγματική κράτηση.
 3. Integration test booking flow: event details -> book -> my bookings -> organizer event bookings.
 4. Test cancellation: event cancel -> bookings status/message behavior.
 5. Update specs ή τουλάχιστον καταγραφή ότι τα generated specs είναι εκτός sync.
 6. Τελικό browser test για photo upload/display.
 7. Τελικό browser test για recommendations στο welcome και events page.
-8. SSL/TLS και hosting/deployment.
+8. Hosting/deployment με production HTTPS.
 9. Τελικό report PDF με βάση αυτό το αρχείο.

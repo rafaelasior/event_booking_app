@@ -66,6 +66,14 @@ export type EventFilters = {
   maxPrice?: string;
 };
 
+export type EventPage = {
+  items: EventItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
 export type CreateEventRequest = {
   title: string;
   eventType: string;
@@ -113,7 +121,7 @@ export class Events {
 
   constructor(private readonly http: HttpClient) {}
 
-  getEvents(filters: EventFilters = {}): Observable<EventItem[]> {
+  private buildParams(filters: EventFilters = {}) {
     let params = new HttpParams();
 
     for (const [key, value] of Object.entries(filters)) {
@@ -122,7 +130,25 @@ export class Events {
       }
     }
 
-    return this.http.get<EventItem[]>(this.apiUrl, { params });
+    return params;
+  }
+
+  getEvents(filters: EventFilters = {}): Observable<EventItem[]> {
+    return this.http.get<EventItem[]>(this.apiUrl, {
+      params: this.buildParams(filters),
+    });
+  }
+
+  getEventsPage(
+    filters: EventFilters = {},
+    page = 1,
+    limit = 5,
+  ): Observable<EventPage> {
+    const params = this.buildParams(filters)
+      .set('page', String(page))
+      .set('limit', String(limit));
+
+    return this.http.get<EventPage>(this.apiUrl, { params });
   }
 
   createEvent(data: CreateEventRequest): Observable<EventItem> {

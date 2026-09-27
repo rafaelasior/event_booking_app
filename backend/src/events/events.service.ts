@@ -13,6 +13,7 @@ import { UpdateTicketTypeDto } from './dto/update-ticket-type.dto';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { SetEventCategoriesDto } from './dto/set-event-categories.dto';
 import { CreatePhotoDto } from './dto/create-photo.dto';
+import { MessagesService } from '../messages/messages.service';
 
 type EventFilters = {
   status?: string;
@@ -24,6 +25,8 @@ type EventFilters = {
   dateTo?: string;
   minPrice?: string;
   maxPrice?: string;
+  page?: string;
+  limit?: string;
 };
 
 type CurrentUser = {
@@ -35,7 +38,10 @@ type CurrentUser = {
 
 @Injectable()
 export class EventsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly messagesService: MessagesService,
+  ) {}
 
 // ------------------------------------------------------------------------------------
 //  PRIVATE HELPER METHODS
@@ -130,77 +136,105 @@ export class EventsService {
 
   async findAll(filters: EventFilters = {}) {
     const status = this.parseStatus(filters.status);
-    return this.prisma.event.findMany({ // παίρνει πολλά events από τη βαση
-      where: {
-        ...(status ? { status: status } : {}),  
-        ...(filters.city ? { city: filters.city } : {}),
-        ...(filters.eventType ? { eventType: filters.eventType } : {}),
-        ...(filters.search
-          ? {
-              OR: [
-                {
-                  title: {
-                    contains: filters.search,
-                    mode: 'insensitive' as const,
-                  },
-                },
-                {
-                  description: {
-                    contains: filters.search,
-                    mode: 'insensitive' as const,
-                  },
-                },
-              ],
-            }
-          : {}),
-        ...(filters.categoryId
-          ? {
-              eventCategories: {
-                some: {
-                  categoryId: Number(filters.categoryId), //φέρε events όπου υπάρχει έστω μία eventCategory με categoryId = X
-                },
-              },
-            }
-          : {}),
-        ...(filters.dateFrom || filters.dateTo
-          ? {
-              startDateTime: {
-                ...(filters.dateFrom ? { gte: new Date(filters.dateFrom) } : {}),
-                ...(filters.dateTo ? { lte: new Date(filters.dateTo) } : {}),
-              },
-            }
-          : {}),
+    const page = Math.max(Number(filters.page) || 1, 1);
+    const limit = Math.min(Math.max(Number(filters.limit) || 0, 0), 50);
+    const shouldPaginate = Boolean(filters.page || filters.limit);
 
-        ...(filters.minPrice || filters.maxPrice
-          ? {
-              ticketTypes: {
-                some: {
-                  price: {
-                    ...(filters.minPrice ? { gte: Number(filters.minPrice) } : {}),
-                    ...(filters.maxPrice ? { lte: Number(filters.maxPrice) } : {}),
-                  },
+    const where = {
+      ...(status ? { status: status } : {}),
+      ...(filters.city
+        ? { city: { contains: filters.city, mode: 'insensitive' as const } }
+        : {}),
+      ...(filters.eventType ? { eventType: filters.eventType } : {}),
+      ...(filters.search
+        ? {
+            OR: [
+              { title: { contains: filters.search, mode: 'insensitive' as const } },
+              { description: { contains: filters.search, mode: 'insensitive' as const } },
+              { venue: { contains: filters.search, mode: 'insensitive' as const } },
+              { address: { contains: filters.search, mode: 'insensitive' as const } },
+              { city: { contains: filters.search, mode: 'insensitive' as const } },
+              { country: { contains: filters.search, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
+      ...(filters.categoryId
+        ? {
+            eventCategories: {
+              some: {
+                categoryId: Number(filters.categoryId),
+              },
+            },
+          }
+        : {}),
+      ...(filters.dateFrom || filters.dateTo
+        ? {
+            startDateTime: {
+              ...(filters.dateFrom ? { gte: new Date(filters.dateFrom) } : {}),
+              ...(filters.dateTo ? { lte: new Date(filters.dateTo) } : {}),
+            },
+          }
+        : {}),
+      ...(filters.minPrice || filters.maxPrice
+        ? {
+            ticketTypes: {
+              some: {
+                price: {
+                  ...(filters.minPrice ? { gte: Number(filters.minPrice) } : {}),
+                  ...(filters.maxPrice ? { lte: Number(filters.maxPrice) } : {}),
                 },
               },
-            }
-          : {}),
-      },
-      include: {    // μαζι με στοιχεία του οργανωτή τους (οχι όλα τα στοιχεία) 
-        organizer: {
-          select: {
-            id: true,
-            username: true,
-          },
-        },
-        eventCategories: {
-          include: {
-            category: true, // περιλαμβάνει τα στοιχεία της κατηγορίας
-          },
+            },
+          }
+        : {}),
+    };
+
+    const include = {
+      organizer: {
+        select: {
+          id: true,
+          username: true,
         },
       },
+      ticketTypes: true,
+      photos: true,
+      eventCategories: {
+        include: {
+          category: true,
+        },
+      },
+    };
+
+    const query = {
+      where,
+      include,
       orderBy: {
-        startDateTime: 'asc',   // ταξινόμηση των events με βάση την ημερομηνία έναρξης σε αύξουσα σειρά
+        startDateTime: 'asc' as const,
       },
-    });
+      ...(shouldPaginate && limit
+        ? {
+            skip: (page - 1) * limit,
+            take: limit,
+          }
+        : {}),
+    };
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.event.findMany(query),
+      this.prisma.event.count({ where }),
+    ]);
+
+    if (!shouldPaginate || !limit) {
+      return items;
+    }
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.max(Math.ceil(total / limit), 1),
+    };
   }
 
   // Να επιστρέφει όλα τα events που έχει δημιουργήσει ο τρέχων χρήστης
@@ -304,7 +338,7 @@ export class EventsService {
       throw new BadRequestException('Capacity cannot be lower than reserved seats');
     }
 
-    return this.prisma.event.update({
+    await this.prisma.event.update({
       where: { id },
       data: {
         ...updateEventDto,
@@ -316,6 +350,10 @@ export class EventsService {
           : {}),
       },
     });
+
+    // Επιστρέφουμε το event μαζί με ticketTypes, photos και categories,
+    // όπως και η setEventCategories, για να μη χάνονται στο frontend.
+    return this.findOne(id);
   }
 
   async publish(id: number, user: CurrentUser) {
@@ -330,6 +368,16 @@ export class EventsService {
     this.ensureCanManageEvent(event, user);
     this.ensureEventIsEditable(event);
     this.validateDateRange(event.startDateTime, event.endDateTime);
+
+    const categoryCount = await this.prisma.eventCategory.count({
+      where: { eventId: id },
+    });
+
+    if (categoryCount === 0) {
+      throw new BadRequestException(
+        'Event must have at least one category before publishing',
+      );
+    }
 
     const ticketQuantityTotal = await this.getTicketQuantityTotal(id);
 
@@ -377,7 +425,7 @@ export class EventsService {
       throw new BadRequestException('Event is already cancelled');
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const cancelledEvent = await this.prisma.$transaction(async (tx) => {
       await tx.booking.updateMany({
         where: {
           eventId: id,
@@ -397,6 +445,20 @@ export class EventsService {
         },
       });
     });
+
+    // Ο διοργανωτής ενημερώνει όλους όσους είχαν κράτηση ότι το event ακυρώθηκε.
+    await this.messagesService.sendCancellationAnnouncement(
+      id,
+      {
+        subject: `Event cancelled: ${event.title}`,
+        content:
+          `We are sorry to inform you that the event "${event.title}" ` +
+          `has been cancelled. Your booking has been cancelled as well.`,
+      },
+      event.organizerId,
+    );
+
+    return cancelledEvent;
   }
 
   async deleteEvent(id: number, user: CurrentUser) {

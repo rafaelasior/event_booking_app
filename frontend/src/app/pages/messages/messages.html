@@ -7,6 +7,7 @@
     @if (auth.isLoggedIn()) {
       <a routerLink="/events/my">My Events</a>
       <a routerLink="/bookings">My Bookings</a>
+      <app-messages-link />
       <a routerLink="/profile" class="profile-icon" aria-label="Profile">
         <span aria-hidden="true">👤</span>
       </a>

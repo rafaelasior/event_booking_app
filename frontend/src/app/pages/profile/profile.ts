@@ -1,10 +1,11 @@
 import { Component, OnInit} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Auth } from '../../auth/auth';
+import { MessagesLink } from '../../shared/messages-link/messages-link';
 
 @Component({
   selector: 'app-profile',
-  imports: [RouterLink],
+  imports: [RouterLink, MessagesLink],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })

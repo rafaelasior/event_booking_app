@@ -8,10 +8,13 @@ import {
   Events,
   TicketType,
 } from '../../events/events';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { MessagesLink } from '../../shared/messages-link/messages-link';
+
 
 @Component({
   selector: 'app-event-manage',
-  imports: [RouterLink, FormsModule],
+  imports: [RouterLink, FormsModule, MessagesLink],
   templateUrl: './event-manage.html',
   styleUrl: './event-manage.css',
 })
@@ -22,6 +25,9 @@ export class EventManage implements OnInit {
   saving = signal(false);
   errorMessage = signal('');
   successMessage = signal('');
+  locationLoading = signal(false);
+  locationMessage = signal('');
+
 
   detailsForm = {
     title: '',
@@ -30,6 +36,8 @@ export class EventManage implements OnInit {
     address: '',
     city: '',
     country: '',
+    latitude: '',
+    longitude: '',
     capacity: 1,
     startDateTime: '',
     endDateTime: '',
@@ -64,6 +72,8 @@ export class EventManage implements OnInit {
     private readonly router: Router,
     private readonly eventsService: Events,
     public readonly auth: Auth,
+    private readonly sanitizer: DomSanitizer,
+
   ) {}
 
   ngOnInit() {
@@ -119,6 +129,8 @@ export class EventManage implements OnInit {
       address: event.address,
       city: event.city,
       country: event.country,
+      latitude: event.latitude !== null ? String(event.latitude) : '',
+      longitude: event.longitude !== null ? String(event.longitude) : '',
       capacity: event.capacity,
       startDateTime: this.toDateTimeLocal(event.startDateTime),
       endDateTime: this.toDateTimeLocal(event.endDateTime),
@@ -145,6 +157,64 @@ export class EventManage implements OnInit {
       this.loadEvent(event.id);
     }
   }
+
+    findLocation() {
+    this.locationMessage.set('');
+
+    const query = [
+      this.detailsForm.address,
+      this.detailsForm.city,
+      this.detailsForm.country,
+    ]
+      .filter(Boolean)
+      .join(', ');
+
+    if (!query) {
+      this.locationMessage.set('Fill address, city or country first.');
+      return;
+    }
+
+    this.locationLoading.set(true);
+
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
+
+    fetch(url, { headers: { Accept: 'application/json' } })
+      .then((response) => response.json())
+      .then((results) => {
+        if (!results.length) {
+          this.locationMessage.set('Location was not found. Try a more specific address.');
+          return;
+        }
+
+        this.detailsForm.latitude = results[0].lat;
+        this.detailsForm.longitude = results[0].lon;
+        this.locationMessage.set('Location found. Press "Save details" to keep it.');
+      })
+      .catch((error) => {
+        console.error('failed to find location:', error);
+        this.locationMessage.set('Could not find location.');
+      })
+      .finally(() => this.locationLoading.set(false));
+  }
+
+  mapPreviewUrl(): SafeResourceUrl | null {
+    if (!this.detailsForm.latitude || !this.detailsForm.longitude) {
+      return null;
+    }
+
+    const lat = Number(this.detailsForm.latitude);
+    const lon = Number(this.detailsForm.longitude);
+    const delta = 0.01;
+
+    const bbox = [lon - delta, lat - delta, lon + delta, lat + delta].join(',');
+
+    const url =
+      `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}` +
+      `&layer=mapnik&marker=${lat},${lon}`;
+
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
+
 
   setSuccess(message: string) {
     this.successMessage.set(message);
@@ -182,6 +252,8 @@ export class EventManage implements OnInit {
       address: this.detailsForm.address,
       city: this.detailsForm.city,
       country: this.detailsForm.country,
+      latitude: this.detailsForm.latitude ? Number(this.detailsForm.latitude) : undefined,
+      longitude: this.detailsForm.longitude ? Number(this.detailsForm.longitude) : undefined,
       capacity: Number(this.detailsForm.capacity),
       startDateTime: new Date(this.detailsForm.startDateTime).toISOString(),
       endDateTime: new Date(this.detailsForm.endDateTime).toISOString(),
@@ -231,7 +303,7 @@ export class EventManage implements OnInit {
 
     this.eventsService.cancelEvent(event.id).subscribe({
       next: () => {
-        this.setSuccess('Event cancelled.');
+        this.setSuccess('Event cancelled. All attendees have been notified.');
         this.refreshCurrentEvent();
       },
       error: (error) => this.setError(error, 'Could not cancel event.'),

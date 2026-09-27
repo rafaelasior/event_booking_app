@@ -2,10 +2,11 @@ import { Component, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { EventItem, Events } from '../../events/events';
 import { Auth } from '../../auth/auth';
+import { MessagesLink } from '../../shared/messages-link/messages-link';
 
 @Component({
   selector: 'app-my-events',
-  imports: [RouterLink],
+  imports: [RouterLink, MessagesLink],
   templateUrl: './my-events.html',
   styleUrl: './my-events.css',
 })

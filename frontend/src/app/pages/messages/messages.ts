@@ -4,12 +4,13 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { Message, Messages } from '../../messages/messages';
 import { Auth } from '../../auth/auth';
+import { MessagesLink } from '../../shared/messages-link/messages-link';
 
 type Box = 'inbox' | 'sent';
 
 @Component({
   selector: 'app-messages',
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, MessagesLink],
   templateUrl: './messages.html',
   styleUrl: './messages.css',
 })

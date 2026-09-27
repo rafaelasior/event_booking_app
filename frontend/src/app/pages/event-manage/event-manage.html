@@ -5,7 +5,7 @@
     <div class="nav-actions">
       <a routerLink="/events">Browse</a>
       <a routerLink="/events/my">My Events</a>
-      <a routerLink="/messages">Messages</a>
+      <app-messages-link />
       <a routerLink="/profile" class="profile-icon" aria-label="Profile">
         <span aria-hidden="true">👤</span>
       </a>
@@ -98,6 +98,38 @@
               Country
               <input required type="text" name="country" [(ngModel)]="detailsForm.country" />
             </label>
+
+            <div class="location-tools full-row">
+              <div>
+                <h2>Map location</h2>
+                <p>Change the address and press "Find on map" to update the location.</p>
+
+                @if (locationMessage()) {
+                  <p class="location-message">{{ locationMessage() }}</p>
+                }
+
+                @if (detailsForm.latitude && detailsForm.longitude) {
+                  <p class="coordinates">
+                    Coordinates: {{ detailsForm.latitude }}, {{ detailsForm.longitude }}
+                  </p>
+                }
+              </div>
+
+              <button
+                type="button"
+                class="secondary-button"
+                [disabled]="locationLoading()"
+                (click)="findLocation()"
+              >
+                {{ locationLoading() ? 'Finding...' : 'Find on map' }}
+              </button>
+            </div>
+
+            @if (mapPreviewUrl()) {
+              <div class="map-preview full-row">
+                <iframe title="Event location preview" [src]="mapPreviewUrl()" loading="lazy"></iframe>
+              </div>
+            }
 
             <label>
               Start date/time

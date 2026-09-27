@@ -58,6 +58,8 @@ export class EventsController {
     @Query('dateTo') dateTo?: string,
     @Query('minPrice') minPrice?: string,
     @Query('maxPrice') maxPrice?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     return this.eventsService.findAll({
       status,
@@ -69,6 +71,8 @@ export class EventsController {
       dateTo,
       minPrice,
       maxPrice,
+      page,
+      limit,
     });
   }
 

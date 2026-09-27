@@ -5,16 +5,18 @@ import {
   Category,
   EventFilters,
   EventItem,
+  EventPage,
   Events as EventsService,
 } from '../../events/events';
 import { Auth } from '../../auth/auth';
 import { finalize } from 'rxjs';
 import { AdminExport, ExportFormat } from '../../admin/admin-export';
 import { Recommendations } from '../../recommendations/recommendations';
+import { MessagesLink } from '../../shared/messages-link/messages-link';
 
 @Component({
   selector: 'app-events-page',
-  imports: [RouterLink, FormsModule],
+  imports: [RouterLink, FormsModule, MessagesLink],
   templateUrl: './events.html',
   styleUrl: './events.css',
 })
@@ -28,6 +30,10 @@ export class EventsPage implements OnInit {
   recommendationsLoading = signal(false);
   recommendationsError = signal('');
   viewMode = signal<'all' | 'recommended'>('all');
+  page = signal(1);
+  pageSize = 5;
+  totalEvents = signal(0);
+  totalPages = signal(1);
 
   filters: EventFilters = {
     search: '',
@@ -75,13 +81,17 @@ export class EventsPage implements OnInit {
     });
   }
 
-  loadEvents() {
+  loadEvents(page = this.page()) {
     this.loading.set(true);
     this.errorMessage.set('');
+    this.page.set(page);
 
-    this.eventsService.getEvents(this.filters).subscribe({
-      next: (events) => {
-        this.events.set(events);
+    this.eventsService.getEventsPage(this.filters, page, this.pageSize).subscribe({
+      next: (result: EventPage) => {
+        this.events.set(result.items);
+        this.totalEvents.set(result.total);
+        this.totalPages.set(result.totalPages);
+        this.page.set(result.page);
         this.loading.set(false);
       },
       error: (error) => {
@@ -94,6 +104,22 @@ export class EventsPage implements OnInit {
 
   showAllEvents() {
     this.viewMode.set('all');
+  }
+
+  previousPage() {
+    if (this.page() <= 1) {
+      return;
+    }
+
+    this.loadEvents(this.page() - 1);
+  }
+
+  nextPage() {
+    if (this.page() >= this.totalPages()) {
+      return;
+    }
+
+    this.loadEvents(this.page() + 1);
   }
 
   showRecommendedEvents() {
@@ -140,7 +166,7 @@ export class EventsPage implements OnInit {
       status: 'PUBLISHED',
     };
 
-    this.loadEvents();
+    this.loadEvents(1);
   }
 
   formatDate(value: string) {
@@ -168,6 +194,20 @@ export class EventsPage implements OnInit {
     return Math.min(
       ...event.ticketTypes.map((ticketType) => Number(ticketType.price)),
     );
+  }
+
+  eventPhotoUrl(event: EventItem) {
+    const filePath = event.photos?.[0]?.filePath;
+
+    if (!filePath) {
+      return null;
+    }
+
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      return filePath;
+    }
+
+    return `https://localhost:3000${filePath.startsWith('/') ? filePath : `/${filePath}`}`;
   }
 
   exportEvents(format: ExportFormat) {

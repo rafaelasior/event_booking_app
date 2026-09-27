@@ -1,0 +1,14 @@
+.messages-link {
+  position: relative;
+}
+
+.unread-dot {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e11d48;
+  border: 2px solid var(--color-surface);
+}

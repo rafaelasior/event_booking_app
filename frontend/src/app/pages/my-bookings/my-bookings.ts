@@ -3,10 +3,11 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Booking, Bookings } from '../../bookings/bookings';
 import { Auth } from '../../auth/auth';
+import { MessagesLink } from '../../shared/messages-link/messages-link';
 
 @Component({
   selector: 'app-my-bookings',
-  imports: [RouterLink, CurrencyPipe, DatePipe],
+  imports: [RouterLink, CurrencyPipe, DatePipe, MessagesLink],
   templateUrl: './my-bookings.html',
   styleUrl: './my-bookings.css',
 })
