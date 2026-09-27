@@ -54,8 +54,22 @@ export class EventsController {
     @Query('eventType') eventType?: string,
     @Query('search') search?: string,
     @Query('categoryId') categoryId?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('minPrice') minPrice?: string,
+    @Query('maxPrice') maxPrice?: string,
   ) {
-    return this.eventsService.findAll({ status, city, eventType, search, categoryId, });
+    return this.eventsService.findAll({
+      status,
+      city,
+      eventType,
+      search,
+      categoryId,
+      dateFrom,
+      dateTo,
+      minPrice,
+      maxPrice,
+    });
   }
 
   @UseGuards(JwtAuthGuard)
@@ -74,6 +88,15 @@ export class EventsController {
   @Post('categories')
   createCategory(@Body() createCategoryDto: CreateCategoryDto) {
     return this.eventsService.createCategory(createCategoryDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/view')
+  recordView(
+    @Param('id') id: string,
+    @Req() request: RequestWithUser,
+  ) {
+    return this.eventsService.recordView(+id, request.user.userId);
   }
   
 

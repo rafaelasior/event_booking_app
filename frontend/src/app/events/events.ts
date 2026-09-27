@@ -60,6 +60,10 @@ export type EventFilters = {
   eventType?: string;
   search?: string;
   categoryId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  minPrice?: string;
+  maxPrice?: string;
 };
 
 export type CreateEventRequest = {
@@ -127,6 +131,13 @@ export class Events {
 
   getEvent(id: number): Observable<EventItem> {
     return this.http.get<EventItem>(`${this.apiUrl}/${id}`);
+  }
+
+  recordView(id: number): Observable<{ recorded: boolean; reason?: string }> {
+    return this.http.post<{ recorded: boolean; reason?: string }>(
+      `${this.apiUrl}/${id}/view`,
+      {},
+    );
   }
 
   getCategories(): Observable<Category[]> {

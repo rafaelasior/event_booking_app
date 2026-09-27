@@ -3,6 +3,14 @@
 /node_modules
 /build
 
+dataset.zip
+dataset/
+private-data/
+*.csv
+*.tsv
+*.xlsx
+*.parquet
+
 # Logs
 logs
 *.log

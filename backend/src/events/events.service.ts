@@ -20,6 +20,10 @@ type EventFilters = {
   eventType?: string;
   search?: string;
   categoryId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  minPrice?: string;
+  maxPrice?: string;
 };
 
 type CurrentUser = {
@@ -133,10 +137,20 @@ export class EventsService {
         ...(filters.eventType ? { eventType: filters.eventType } : {}),
         ...(filters.search
           ? {
-              title: {
-                contains: filters.search,
-                mode: 'insensitive' as const, //σημαίνει ότι δεν νοιάζεται για κεφαλαία/πεζά
-              },
+              OR: [
+                {
+                  title: {
+                    contains: filters.search,
+                    mode: 'insensitive' as const,
+                  },
+                },
+                {
+                  description: {
+                    contains: filters.search,
+                    mode: 'insensitive' as const,
+                  },
+                },
+              ],
             }
           : {}),
         ...(filters.categoryId
@@ -144,6 +158,27 @@ export class EventsService {
               eventCategories: {
                 some: {
                   categoryId: Number(filters.categoryId), //φέρε events όπου υπάρχει έστω μία eventCategory με categoryId = X
+                },
+              },
+            }
+          : {}),
+        ...(filters.dateFrom || filters.dateTo
+          ? {
+              startDateTime: {
+                ...(filters.dateFrom ? { gte: new Date(filters.dateFrom) } : {}),
+                ...(filters.dateTo ? { lte: new Date(filters.dateTo) } : {}),
+              },
+            }
+          : {}),
+
+        ...(filters.minPrice || filters.maxPrice
+          ? {
+              ticketTypes: {
+                some: {
+                  price: {
+                    ...(filters.minPrice ? { gte: Number(filters.minPrice) } : {}),
+                    ...(filters.maxPrice ? { lte: Number(filters.maxPrice) } : {}),
+                  },
                 },
               },
             }
@@ -215,6 +250,34 @@ export class EventsService {
     }
 
     return event;
+  }
+
+  
+  async recordView(eventId: number, userId: number) {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    if (event.organizerId === userId) {
+      return { recorded: false, reason: 'Organizer view is ignored' };
+    }
+
+    if (event.status !== EventStatus.PUBLISHED) {
+      return { recorded: false, reason: 'Only published event views are recorded' };
+    }
+
+    await this.prisma.eventView.create({
+      data: {
+        eventId,
+        userId,
+      },
+    });
+
+    return { recorded: true };
   }
   
 

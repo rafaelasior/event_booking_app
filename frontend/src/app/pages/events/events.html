@@ -9,6 +9,9 @@
         <a routerLink="/events/my">My Events</a>
         <a routerLink="/bookings">My Bookings</a>
         <a routerLink="/messages">Messages</a>
+        @if (auth.isAdmin()) {
+          <a routerLink="/admin/users">Users</a>
+        }
         <a routerLink="/profile" class="profile-icon" aria-label="Profile">
           <span aria-hidden="true">👤</span>
         </a>
@@ -29,9 +32,31 @@
         </p>
       </div>
 
-      <button type="button" class="ghost-button" (click)="clearFilters()">
-        Clear filters
-      </button>
+      <div class="heading-actions">
+        @if (auth.isAdmin()) {
+          <button
+            type="button"
+            class="ghost-button"
+            [disabled]="exporting() !== null"
+            (click)="exportEvents('xml')"
+          >
+            Export XML
+          </button>
+
+          <button
+            type="button"
+            class="ghost-button"
+            [disabled]="exporting() !== null"
+            (click)="exportEvents('json')"
+          >
+            Export JSON
+          </button>
+        }
+
+        <button type="button" class="ghost-button" (click)="clearFilters()">
+          Clear filters
+        </button>
+      </div>
     </div>
 
     <form class="filters" (ngSubmit)="loadEvents()">
@@ -73,6 +98,48 @@
             <option [value]="category.id">{{ category.name }}</option>
           }
         </select>
+      </label>
+
+      <label>
+        From date
+        <input
+          type="date"
+          name="dateFrom"
+          [(ngModel)]="filters.dateFrom"
+        />
+      </label>
+
+      <label>
+        To date
+        <input
+          type="date"
+          name="dateTo"
+          [(ngModel)]="filters.dateTo"
+        />
+      </label>
+
+      <label>
+        Min price
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          name="minPrice"
+          placeholder="0"
+          [(ngModel)]="filters.minPrice"
+        />
+      </label>
+
+      <label>
+        Max price
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          name="maxPrice"
+          placeholder="50"
+          [(ngModel)]="filters.maxPrice"
+        />
       </label>
 
       <button type="submit">Search</button>

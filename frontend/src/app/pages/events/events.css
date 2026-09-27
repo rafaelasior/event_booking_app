@@ -69,7 +69,7 @@ h1 {
 
 .filters {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr 1fr auto;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
   gap: 12px;
   align-items: end;
   margin-bottom: 26px;
@@ -189,6 +189,13 @@ h1 {
 .details-link {
   justify-self: start;
   margin-top: 6px;
+}
+
+.heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
 }
 
 @media (max-width: 900px) {

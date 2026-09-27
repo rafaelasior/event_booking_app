@@ -9,6 +9,9 @@
         <a routerLink="/events/my">My Events</a>
         <a routerLink="/bookings">My Bookings</a>
         <a routerLink="/messages">Messages</a>
+        @if (auth.isAdmin()) {
+          <a routerLink="/admin/users">Users</a>
+        }
         <a routerLink="/profile" class="profile-icon" aria-label="Profile">
           <span aria-hidden="true">👤</span>
         </a>

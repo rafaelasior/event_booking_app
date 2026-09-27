@@ -8,6 +8,8 @@ import {
   Events as EventsService,
 } from '../../events/events';
 import { Auth } from '../../auth/auth';
+import { finalize } from 'rxjs';
+import { AdminExport, ExportFormat } from '../../admin/admin-export';
 
 @Component({
   selector: 'app-events-page',
@@ -20,12 +22,17 @@ export class EventsPage implements OnInit {
   categories = signal<Category[]>([]);
   loading = signal(false);
   errorMessage = signal('');
+  exporting = signal<ExportFormat | null>(null);
 
   filters: EventFilters = {
     search: '',
     city: '',
     eventType: '',
     categoryId: '',
+    dateFrom: '',
+    dateTo: '',
+    minPrice: '',
+    maxPrice: '',
     status: 'PUBLISHED',
   };
 
@@ -43,6 +50,7 @@ export class EventsPage implements OnInit {
   constructor(
     private readonly eventsService: EventsService,
     public readonly auth: Auth,
+    private readonly adminExport: AdminExport,
   ) {}
 
   ngOnInit() {
@@ -84,6 +92,10 @@ export class EventsPage implements OnInit {
       city: '',
       eventType: '',
       categoryId: '',
+      dateFrom: '',
+      dateTo: '',
+      minPrice: '',
+      maxPrice: '',
       status: 'PUBLISHED',
     };
 
@@ -115,5 +127,30 @@ export class EventsPage implements OnInit {
     return Math.min(
       ...event.ticketTypes.map((ticketType) => Number(ticketType.price)),
     );
+  }
+
+  exportEvents(format: ExportFormat) {
+    if (!this.auth.isAdmin()) {
+      this.errorMessage.set('Admin access only.');
+      return;
+    }
+
+    this.exporting.set(format);
+
+    this.adminExport.download(format).pipe(
+      finalize(() => this.exporting.set(null)),
+    ).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+
+        link.href = url;
+        link.download = `events.${format}`;
+        link.click();
+
+        setTimeout(() => URL.revokeObjectURL(url));
+      },
+      error: () => this.errorMessage.set('Could not export events.'),
+    });
   }
 }

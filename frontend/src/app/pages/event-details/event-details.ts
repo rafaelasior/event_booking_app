@@ -50,6 +50,17 @@ export class EventDetails implements OnInit {
   }
 
 
+  recordView(eventId: number) {
+    if (!this.auth.isLoggedIn()) {
+      return;
+    }
+
+    this.eventsService.recordView(eventId).subscribe({
+      next: () => {},
+      error: (error) => console.error('failed to record event view:', error),
+    });
+  }
+
   loadEvent(id: number) {
     this.loading.set(true);
     this.errorMessage.set('');
@@ -57,6 +68,7 @@ export class EventDetails implements OnInit {
     this.eventsService.getEvent(id).subscribe({
       next: (event) => {
         this.event.set(event);
+        this.recordView(event.id);
         this.loading.set(false);
       },
       error: (error) => {

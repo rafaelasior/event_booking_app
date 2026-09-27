@@ -106,4 +106,20 @@ export class Auth {
     }
   }
 
+  getRoles(): string[] {
+    const token = this.getToken();
+
+    if (!token || !this.isLoggedIn()) {
+      return [];
+    }
+
+    const payload = this.getTokenPayload(token);
+
+    return payload?.roles ?? [];
+  }
+
+  isAdmin(): boolean {
+    return this.getRoles().includes('admin');
+  }
+
 }
