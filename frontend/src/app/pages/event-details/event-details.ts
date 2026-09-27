@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Events, EventItem } from '../../events/events';
+import { Auth } from '../../auth/auth';
 
 @Component({
   selector: 'app-event-details',
@@ -16,6 +17,7 @@ export class EventDetails implements OnInit {
   constructor(
     private readonly route: ActivatedRoute,
     private readonly eventsService: Events,
+    public readonly auth: Auth,
   ) {}
 
   ngOnInit() {
@@ -27,6 +29,10 @@ export class EventDetails implements OnInit {
     }
 
     this.loadEvent(id);
+  }
+
+  logout() {
+    this.auth.logout();
   }
 
   loadEvent(id: number) {

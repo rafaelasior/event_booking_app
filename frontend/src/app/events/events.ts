@@ -62,6 +62,21 @@ export type EventFilters = {
   categoryId?: string;
 };
 
+export type CreateEventRequest = {
+  title: string;
+  eventType: string;
+  venue: string;
+  address: string;
+  city: string;
+  country: string;
+  latitude?: number;
+  longitude?: number;
+  startDateTime: string;
+  endDateTime: string;
+  capacity: number;
+  description: string;
+};
+
 export type Category = {
   id: number;
   name: string;
@@ -87,11 +102,31 @@ export class Events {
     return this.http.get<EventItem[]>(this.apiUrl, { params });
   }
 
+  createEvent(data: CreateEventRequest): Observable<EventItem> {
+    return this.http.post<EventItem>(this.apiUrl, data);
+  }
+
   getEvent(id: number): Observable<EventItem> {
     return this.http.get<EventItem>(`${this.apiUrl}/${id}`);
   }
 
   getCategories(): Observable<Category[]> {
     return this.http.get<Category[]>(`${this.apiUrl}/categories`);
+  }
+
+  getMyEvents(): Observable<EventItem[]> {
+    return this.http.get<EventItem[]>(`${this.apiUrl}/my`);
+  }
+
+  publishEvent(id: number): Observable<EventItem> {
+    return this.http.patch<EventItem>(`${this.apiUrl}/${id}/publish`, {});
+  }
+
+  cancelEvent(id: number): Observable<EventItem> {
+    return this.http.patch<EventItem>(`${this.apiUrl}/${id}/cancel`, {});
+  }
+
+  deleteEvent(id: number): Observable<EventItem> {
+    return this.http.delete<EventItem>(`${this.apiUrl}/${id}`);
   }
 }

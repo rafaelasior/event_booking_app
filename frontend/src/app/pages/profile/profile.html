@@ -1,0 +1,57 @@
+<main class="profile-page">
+  <nav class="top-nav">
+    <a routerLink="/" class="brand">Event Booking</a>
+
+    <div class="nav-actions">
+      <a routerLink="/">Home</a>
+      <a routerLink="/events">Browse</a>
+      <a routerLink="/events/my">My Events</a>
+      <a routerLink="/messages">Messages</a>
+    </div>
+  </nav>
+
+  <section class="profile-shell">
+    <a routerLink="/" class="back-link">Back home</a>
+
+    @if (auth.isLoggedIn()) {
+      <div class="profile-card">
+        <div class="avatar" aria-hidden="true">U</div>
+
+        <div>
+          <p class="eyebrow">Account</p>
+          <h1>Your profile</h1>
+          <p class="muted">Manage your session and account shortcuts.</p>
+
+          <dl class="details">
+            <dt>User ID</dt>
+            <dd>{{ userId() ?? 'Unknown' }}</dd>
+
+            <dt>Status</dt>
+            <dd>Signed in</dd>
+          </dl>
+
+          <div class="actions">
+            <a routerLink="/events/my" class="btn primary">My events</a>
+            <a routerLink="/messages" class="btn revoke">Messages</a>
+            <button type="button" class="btn reject" (click)="logout()">
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="profile-card">
+        <div>
+          <p class="eyebrow">Account</p>
+          <h1>You are not signed in</h1>
+          <p class="muted">Sign in to manage events, bookings and messages.</p>
+
+          <div class="actions">
+            <a routerLink="/login" class="btn primary">Sign in</a>
+            <a routerLink="/register" class="btn revoke">Register</a>
+          </div>
+        </div>
+      </div>
+    }
+  </section>
+</main>

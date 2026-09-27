@@ -80,6 +80,21 @@ export class EventsService {
     }
   }
 
+  // Calculate the total quantity of tickets for an event, optionally excluding a specific ticket type
+  private async getTicketQuantityTotal(eventId: number, excludeTicketTypeId?: number) {
+  const ticketTypes = await this.prisma.ticketType.findMany({
+    where: {
+      eventId,
+      ...(excludeTicketTypeId ? { id: { not: excludeTicketTypeId } } : {}),
+    },
+    select: {
+      quantity: true,
+    },
+  });
+
+  return ticketTypes.reduce((total, ticketType) => total + ticketType.quantity, 0);
+}
+
 // ------------------------------------------------------------------------------------
 //  EVENTS
 // ------------------------------------------------------------------------------------
@@ -285,11 +300,60 @@ export class EventsService {
       throw new BadRequestException('Event is already cancelled');
     }
 
-    return this.prisma.event.update({
+    return this.prisma.$transaction(async (tx) => {
+      await tx.booking.updateMany({
+        where: {
+          eventId: id,
+          status: {
+            not: 'CANCELLED',
+          },
+        },
+        data: {
+          status: 'CANCELLED',
+        },
+      });
+
+      return tx.event.update({
+        where: { id },
+        data: {
+          status: EventStatus.CANCELLED,
+        },
+      });
+    });
+  }
+
+  async deleteEvent(id: number, user: CurrentUser) {
+    const event = await this.prisma.event.findUnique({
       where: { id },
-      data: {
-        status: EventStatus.CANCELLED,
+      include: {
+        bookings: true,
       },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    this.ensureCanManageEvent(event, user);
+
+    if (event.reservedSeats > 0 || event.bookings.length > 0) {
+      throw new BadRequestException(
+        'Event cannot be deleted after the first booking',
+      );
+    }
+
+    if (event.status === EventStatus.PUBLISHED) {
+      throw new BadRequestException(
+        'Published events must be cancelled instead of deleted',
+      );
+    }
+
+    if (event.status === EventStatus.COMPLETED) {
+      throw new BadRequestException('Completed events cannot be deleted');
+    }
+
+    return this.prisma.event.delete({
+      where: { id },
     });
   }
 
@@ -312,6 +376,16 @@ export class EventsService {
     }
 
     this.ensureCanManageEvent(event, user);
+
+    // υπάρχοντα tickets + νέο ticket quantity <= event.capacity
+    const currentQuantityTotal = await this.getTicketQuantityTotal(eventId);
+    const nextQuantityTotal = currentQuantityTotal + createTicketTypeDto.quantity;
+
+    if (nextQuantityTotal > event.capacity) {
+      throw new BadRequestException(
+        'Total ticket quantity cannot exceed event capacity',
+      );
+    }
 
     return this.prisma.ticketType.create({
       data: {
@@ -379,6 +453,20 @@ export class EventsService {
           'Quantity cannot be lower than already reserved tickets',
         );
       }
+
+      // Υπολογίζει το συνολικό αριθμό εισιτηρίων για το event, εξαιρώντας τον τρέχοντα τύπο εισιτηρίου
+      const otherTicketQuantityTotal = await this.getTicketQuantityTotal(
+        eventId,
+        ticketTypeId,
+      );
+
+      const nextQuantityTotal = otherTicketQuantityTotal + updateTicketTypeDto.quantity;
+
+      if (nextQuantityTotal > event.capacity) {
+        throw new BadRequestException(
+          'Total ticket quantity cannot exceed event capacity',
+        );
+}
 
       // Ενημερώνει την ποσότητα και τα διαθέσιμα εισιτήρια
       data.quantity = updateTicketTypeDto.quantity;

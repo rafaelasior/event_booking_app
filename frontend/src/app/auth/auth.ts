@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';  // Angular/RxJS τρόπος για async HTTP response
 
@@ -30,6 +30,7 @@ type RegisterRequest = {
 })
 export class Auth {
   private readonly apiUrl = 'http://localhost:3000/auth';
+  private readonly loggedIn = signal(this.getToken() !== null);
 
   constructor(private readonly http: HttpClient) {}
 
@@ -43,6 +44,7 @@ export class Auth {
 
   saveToken(token: string) {
     localStorage.setItem('access_token', token);
+    this.loggedIn.set(true);
   }
 
   getToken(): string | null {
@@ -51,6 +53,7 @@ export class Auth {
 
   logout() {
     localStorage.removeItem('access_token');
+    this.loggedIn.set(false);
   }
 
   isLoggedIn(): boolean {

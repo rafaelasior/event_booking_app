@@ -1,0 +1,127 @@
+<main class="create-page">
+  <nav class="top-nav">
+    <a routerLink="/" class="brand">Event Booking</a>
+
+    <div class="nav-actions">
+      <a routerLink="/events">Browse</a>
+      <a routerLink="/events/my">My Events</a>
+      <a routerLink="/messages">Messages</a>
+      <a routerLink="/profile" class="profile-icon" aria-label="Profile">
+        <span aria-hidden="true">👤</span>
+      </a>
+    </div>
+  </nav>
+
+  <section class="create-shell">
+    <a routerLink="/events/my" class="back-link">Back to my events</a>
+
+    <div class="page-heading">
+      <p class="eyebrow">Organizer</p>
+      <h1>Create event</h1>
+      <p>Create a draft event first. You can publish it when tickets and details are ready.</p>
+    </div>
+
+    @if (!auth.isLoggedIn()) {
+      <div class="signin-panel">
+        <h2>Sign in required</h2>
+        <p>You need an approved account to create events.</p>
+        <a routerLink="/login" class="primary-link">Sign in</a>
+      </div>
+    } @else {
+      @if (errorMessage()) {
+        <p class="error-message">{{ errorMessage() }}</p>
+      }
+
+      <form #eventForm="ngForm" class="event-form" (ngSubmit)="submit(eventForm.valid)">
+        <label class="full-row">
+          Title
+          <input required type="text" name="title" [(ngModel)]="form.title" />
+        </label>
+
+        <label>
+          Event type
+          <select required name="eventType" [(ngModel)]="form.eventType">
+            <option value="">Select type</option>
+            @for (eventType of eventTypes; track eventType) {
+              <option [value]="eventType">{{ eventType }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Capacity
+          <input required type="number" min="1" name="capacity" [(ngModel)]="form.capacity" />
+        </label>
+
+        <label>
+          Venue
+          <input required type="text" name="venue" [(ngModel)]="form.venue" />
+        </label>
+
+        <label>
+          Address
+          <input required type="text" name="address" [(ngModel)]="form.address" />
+        </label>
+
+        <label>
+          City
+          <input required type="text" name="city" [(ngModel)]="form.city" />
+        </label>
+
+        <label>
+          Country
+          <input required type="text" name="country" [(ngModel)]="form.country" />
+        </label>
+
+        <div class="location-tools full-row">
+          <div>
+              <h2>Map location</h2>
+              <p>
+              Use the venue and address fields to find the event location automatically.
+              </p>
+
+              @if (locationMessage()) {
+              <p class="location-message">{{ locationMessage() }}</p>
+              }
+
+              @if (form.latitude && form.longitude) {
+              <p class="coordinates">
+                  Coordinates: {{ form.latitude }}, {{ form.longitude }}
+              </p>
+              }
+          </div>
+
+          <button
+              type="button"
+              class="secondary-button"
+              [disabled]="locationLoading()"
+              (click)="findLocation()"
+          >
+              {{ locationLoading() ? 'Finding...' : 'Find on map' }}
+          </button>
+        </div>
+
+        <label>
+          Start date/time
+          <input required type="datetime-local" name="startDateTime" [(ngModel)]="form.startDateTime" />
+        </label>
+
+        <label>
+          End date/time
+          <input required type="datetime-local" name="endDateTime" [(ngModel)]="form.endDateTime" />
+        </label>
+
+        <label class="full-row">
+          Description
+          <textarea required rows="5" name="description" [(ngModel)]="form.description"></textarea>
+        </label>
+
+        <div class="form-actions full-row">
+          <button type="submit" [disabled]="saving()">
+            {{ saving() ? 'Creating...' : 'Create draft' }}
+          </button>
+        </div>
+      </form>
+    }
+  </section>
+</main>

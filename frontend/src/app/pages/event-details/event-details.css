@@ -36,10 +36,24 @@
   gap: 12px;
 }
 
-.nav-actions a {
+.nav-actions a,
+.nav-button {
   color: var(--color-text);
   text-decoration: none;
   font-weight: 800;
+}
+
+.nav-actions a:hover,
+.nav-button:hover {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.nav-button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
 }
 
 .primary-link,
@@ -231,6 +245,23 @@ h2 {
 
 .error-message {
   color: var(--color-accent);
+}
+
+.profile-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  background: var(--color-primary-soft);
+  color: var(--color-primary) !important;
+  font-size: 1.05rem;
+  padding: 0 !important;
+}
+
+.profile-icon:hover {
+  background: var(--color-primary) !important;
+  color: #fff !important;
 }
 
 @media (max-width: 900px) {

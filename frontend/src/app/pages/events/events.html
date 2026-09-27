@@ -4,9 +4,17 @@
 
     <div class="nav-actions">
       <a routerLink="/">Home</a>
-      <a routerLink="/messages">Messages</a>
-      <a routerLink="/login">Sign in</a>
-      <a routerLink="/register" class="primary-link">Register</a>
+
+      @if (auth.isLoggedIn()) {
+        <a routerLink="/events/my">My Events</a>
+        <a routerLink="/messages">Messages</a>
+        <a routerLink="/profile" class="profile-icon" aria-label="Profile">
+          <span aria-hidden="true">👤</span>
+        </a>
+      } @else {
+        <a routerLink="/login">Sign in</a>
+        <a routerLink="/register" class="primary-link">Register</a>
+      }
     </div>
   </nav>
 
@@ -16,8 +24,7 @@
         <p class="eyebrow">Browse events</p>
         <h1>Search published events</h1>
         <p>
-          Explore events by category, type, title or location. Guests can browse freely;
-          booking requires sign in.
+          Explore events by category, type, title or location. Βοoking requires sign in.
         </p>
       </div>
 

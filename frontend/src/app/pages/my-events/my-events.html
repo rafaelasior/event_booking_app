@@ -1,0 +1,132 @@
+<main class="my-events-page">
+  <nav class="top-nav">
+    <a routerLink="/" class="brand">Event Booking</a>
+
+    <div class="nav-actions">
+      <a routerLink="/">Home</a>
+
+      @if (auth.isLoggedIn()) {
+        <a routerLink="/events">Browse Events</a>
+        <a routerLink="/messages">Messages</a>
+        <a routerLink="/profile" class="profile-icon" aria-label="Profile">
+          <span aria-hidden="true">👤</span>
+        </a>
+      } @else {
+        <a routerLink="/login">Sign in</a>
+        <a routerLink="/register" class="primary-link">Register</a>
+      }
+    </div>
+  </nav>
+
+  <section class="my-events-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Organizer</p>
+        <h1>My events</h1>
+        <p>Manage drafts, published events and cancellations.</p>
+      </div>
+
+      <a routerLink="/events/create" class="primary-link">Create event</a>
+    </div>
+
+    @if (!auth.isLoggedIn()) {
+        <div class="signin-panel">
+            <h2>Sign in to manage your events</h2>
+            <p>You need an approved account to create and manage events.</p>
+            <a routerLink="/login" class="primary-link">Sign in</a>
+        </div>
+        }
+    @if (auth.isLoggedIn()) {
+    @if (loading()) {
+      <p class="state-message">Loading your events...</p>
+    }
+
+    @if (errorMessage()) {
+      <p class="error-message">{{ errorMessage() }}</p>
+    }
+
+    @if (!loading() && !events().length) {
+      <p class="state-message">You have not created any events yet.</p>
+    }
+
+    @if (events().length) {
+      <div class="events-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Status</th>
+              <th>Starts</th>
+              <th>Capacity</th>
+              <th>Tickets</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (event of events(); track event.id) {
+              <tr>
+                <td>
+                  <a [routerLink]="['/events', event.id]" class="event-link">
+                    {{ event.title }}
+                  </a>
+                  <span>{{ event.city }} · {{ event.venue }}</span>
+                </td>
+
+                <td>
+                  <span class="badge" [attr.data-status]="event.status">
+                    {{ event.status }}
+                  </span>
+                </td>
+
+                <td>{{ formatDate(event.startDateTime) }}</td>
+
+                <td>{{ event.reservedSeats }} / {{ event.capacity }}</td>
+
+                <td>{{ event.ticketTypes?.length ?? 0 }}</td>
+
+                <td class="actions">
+                  <a [routerLink]="['/events', event.id]" class="btn revoke">
+                    View
+                  </a>
+
+                  @if (event.status === 'DRAFT') {
+                    <button
+                      type="button"
+                      class="btn approve"
+                      [disabled]="busyId() === event.id"
+                      (click)="publish(event)"
+                    >
+                      Publish
+                    </button>
+
+                    <button
+                      type="button"
+                      class="btn reject"
+                      [disabled]="busyId() === event.id"
+                      (click)="delete(event)"
+                    >
+                      Delete
+                    </button>
+                  }
+
+                  @if (event.status === 'PUBLISHED') {
+                    <button
+                      type="button"
+                      class="btn reject"
+                      [disabled]="busyId() === event.id"
+                      (click)="cancel(event)"
+                    >
+                      Cancel
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+}
+  </section>
+</main>

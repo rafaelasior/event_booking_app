@@ -7,6 +7,7 @@ import {
   EventItem,
   Events as EventsService,
 } from '../../events/events';
+import { Auth } from '../../auth/auth';
 
 @Component({
   selector: 'app-events-page',
@@ -39,11 +40,18 @@ export class EventsPage implements OnInit {
     'Other',
   ];
 
-  constructor(private readonly eventsService: EventsService) {}
+  constructor(
+    private readonly eventsService: EventsService,
+    public readonly auth: Auth,
+  ) {}
 
   ngOnInit() {
     this.loadCategories();
     this.loadEvents();
+  }
+
+  logout() {
+    this.auth.logout();
   }
 
   loadCategories() {

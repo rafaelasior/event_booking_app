@@ -3,8 +3,18 @@
     <a routerLink="/" class="brand">Event Booking</a>
 
     <div class="nav-actions">
-      <a routerLink="/login">Sign in</a>
-      <a routerLink="/register" class="primary-link">Register</a>
+      <a routerLink="/events">Browse Events</a>
+
+      @if (auth.isLoggedIn()) {
+        <a routerLink="/events/my">My Events</a>
+        <a routerLink="/messages">Messages</a>
+        <a routerLink="/profile" class="profile-icon" aria-label="Profile">
+          <span aria-hidden="true">👤</span>
+        </a>
+      } @else {
+        <a routerLink="/login">Sign in</a>
+        <a routerLink="/register" class="primary-link">Register</a>
+      }
     </div>
   </nav>
 

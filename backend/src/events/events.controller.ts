@@ -193,6 +193,6 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @Req() request: RequestWithUser) {
-    return this.eventsService.cancel(+id, request.user);
+    return this.eventsService.deleteEvent(+id, request.user);
   }
 }
