@@ -1,15 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit } from '@nestjs/common';
 import { EventStatus } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
-  createReadStream,
   existsSync,
   mkdirSync,
   readFileSync,
   writeFileSync,
 } from 'fs';
-import { createInterface } from 'readline';
 import { dirname, join } from 'path';
+
+// Παράμετροι του Biased MF
+const factors = 16;
+const epochs = 60;
+const learningRate = 0.02;
+const regularization = 0.05;
+const negativesPerPositive = 3;
+const foldInEpochs = 50;
+const retrainIntervalMs = 10 * 60 * 1000;
+
 
 type Interaction = {
   userId: number;
@@ -25,6 +36,12 @@ type FactorModel = {
   eventFactors: Map<number, number[]>;
 };
 
+type UserVector = {
+  bias: number;
+  factors: number[];
+};
+
+
 type SavedFactorModel = {
   globalMean: number;
   userBias: [number, number][];
@@ -34,8 +51,34 @@ type SavedFactorModel = {
 };
 
 @Injectable()
-export class RecommendationsService {
+export class RecommendationsService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(RecommendationsService.name);
+  private model: FactorModel | null = null;
+  private retrainTimer?: NodeJS.Timeout;
+
   constructor(private readonly prisma: PrismaService) {}
+
+  // Με την εκκίνηση: παίρνει το αποθηκευμένο μοντέλο, εκπαιδεύει με τα τρέχοντα
+  // δεδομένα και ξαναεκπαιδεύει κάθε retrainIntervalMs
+  async onModuleInit() {
+    this.model = this.loadSavedModel();
+    await this.retrain();
+    this.retrainTimer = setInterval(() => void this.retrain(), retrainIntervalMs);
+  }
+
+  onModuleDestroy() {
+    clearInterval(this.retrainTimer);
+  }
+
+  private async retrain() {
+    try {
+      const result = await this.trainAndSaveModel();
+      this.logger.log(`Model trained on ${result.totalInteractions} interactions`);
+    } catch (error) {
+      this.logger.warn(`Model not trained: ${(error as Error).message}`);
+    }
+  }
+
 
   private modelPath() {
     return join(process.cwd(), 'private-data', 'recommendations', 'model.json');
@@ -76,9 +119,8 @@ export class RecommendationsService {
   }
 
   async trainAndSaveModel() {
-    const appInteractions = await this.loadAppInteractions();
-    const datasetInteractions = await this.loadDatasetInteractions();
-    const interactions = [...datasetInteractions, ...appInteractions];
+    // Κρατήσεις και επισκέψεις από τη βάση, μαζί με όσα έφερε το seed-recommender
+    const interactions = await this.loadAppInteractions();
 
     if (!interactions.length) {
       throw new Error('No recommendation interactions available for training');
@@ -86,18 +128,18 @@ export class RecommendationsService {
 
     const model = this.trainModel(interactions);
     const path = this.modelPath();
+    this.model = model;
+
 
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, JSON.stringify(this.serializeModel(model)));
 
     return {
       modelPath: path,
-      datasetInteractions: datasetInteractions.length,
-      appInteractions: appInteractions.length,
       totalInteractions: interactions.length,
     };
   }
-
+  
   private dot(a: number[], b: number[]) {
     return a.reduce((sum, value, index) => sum + value * b[index], 0);
   }
@@ -106,15 +148,73 @@ export class RecommendationsService {
     return Array.from({ length: size }, () => (Math.random() - 0.5) * 0.1);
   }
 
-  private trainModel(interactions: Interaction[]): FactorModel {
-    const factors = 8;
-    const epochs = 60;
-    const learningRate = 0.01;
-    const regularization = 0.02;
+  // Τυχαίες εκδηλώσεις που ο χρήστης δεν έχει δει ούτε κλείσει, με βαθμό 1.
+  // Χωρίς αυτές το μοντέλο βλέπει μόνο θετικά και δεν μαθαίνει τι δεν αρέσει.
+  private sampleNegatives(
+    seenByUser: Map<number, Set<number>>,
+    eventIds: number[],
+    negativesPerPositive: number,
+  ): Interaction[] {
+    const negatives: Interaction[] = [];
 
+    for (const [userId, seen] of seenByUser) {
+      const wanted = Math.min(
+        seen.size * negativesPerPositive,
+        eventIds.length - seen.size,
+      );
+      const picked = new Set<number>();
+
+      while (picked.size < wanted) {
+        const eventId = eventIds[Math.floor(Math.random() * eventIds.length)];
+
+        if (!seen.has(eventId)) {
+          picked.add(eventId);
+        }
+      }
+
+      for (const eventId of picked) {
+        negatives.push({ userId, eventId, rating: 1 });
+      }
+    }
+
+    return negatives;
+  }
+
+  // Fisher-Yates: ανακατεύει τη σειρά ώστε το SGD να μη βλέπει πάντα τα ίδια πρώτα
+  private shuffle<T>(items: T[]) {
+    for (let i = items.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+
+    return items;
+  }
+
+
+  private trainModel(interactions: Interaction[]): FactorModel {
+
+    const eventIds = [
+      ...new Set(interactions.map((interaction) => interaction.eventId)),
+    ];
+    const seenByUser = new Map<number, Set<number>>();
+
+    for (const interaction of interactions) {
+      if (!seenByUser.has(interaction.userId)) {
+        seenByUser.set(interaction.userId, new Set());
+      }
+
+      seenByUser.get(interaction.userId)!.add(interaction.eventId);
+    }
+
+    // Ο μέσος όρος μετράει και τα αρνητικά, αφού εκπαιδεύουμε και με αυτά
+    const firstSample = [
+      ...interactions,
+      ...this.sampleNegatives(seenByUser, eventIds, negativesPerPositive),
+    ];
     const globalMean =
-      interactions.reduce((sum, interaction) => sum + interaction.rating, 0) /
-      interactions.length;
+      firstSample.reduce((sum, interaction) => sum + interaction.rating, 0) /
+      firstSample.length;
+
 
     const userBias = new Map<number, number>();
     const eventBias = new Map<number, number>();
@@ -134,7 +234,12 @@ export class RecommendationsService {
     }
 
     for (let epoch = 0; epoch < epochs; epoch++) {
-      for (const interaction of interactions) {
+      // Νέα αρνητικά σε κάθε εποχή, ανακατεμένα με τα θετικά
+      const epochInteractions = this.shuffle([
+        ...interactions,
+        ...this.sampleNegatives(seenByUser, eventIds, negativesPerPositive),
+      ]);
+        for (const interaction of epochInteractions) {
         const currentUserBias = userBias.get(interaction.userId) ?? 0;
         const currentEventBias = eventBias.get(interaction.eventId) ?? 0;
         const currentUserFactors = userFactors.get(interaction.userId)!;
@@ -184,146 +289,132 @@ export class RecommendationsService {
     };
   }
 
-  private predict(model: FactorModel, userId: number, eventId: number) {
-    const userBias = model.userBias.get(userId) ?? 0;
+   private predict(model: FactorModel, user: UserVector, eventId: number) {
     const eventBias = model.eventBias.get(eventId) ?? 0;
-    const userFactors = model.userFactors.get(userId);
     const eventFactors = model.eventFactors.get(eventId);
 
-    const factorScore =
-      userFactors && eventFactors ? this.dot(userFactors, eventFactors) : 0;
+    const factorScore = eventFactors ? this.dot(user.factors, eventFactors) : 0;
 
-    return model.globalMean + userBias + eventBias + factorScore;
+    return model.globalMean + user.bias + eventBias + factorScore;
   }
 
-  private async loadAppInteractions(): Promise<Interaction[]> {
+  // Fold-in: βρίσκει b_u και p_u ενός χρήστη από τις δικές του βαθμολογίες,
+  // με το ίδιο SGD αλλά κρατώντας σταθερά τα b_i και q_i του μοντέλου.
+  // Έτσι δουλεύει και για χρήστες που δεν υπήρχαν στην τελευταία εκπαίδευση.
+  private foldInUser(
+    model: FactorModel,
+    userId: number,
+    interactions: Interaction[],
+  ): UserVector {
+    const user: UserVector = {
+      bias: 0,
+      factors: new Array<number>(factors).fill(0),
+    };
+
+    // Μόνο εκδηλώσεις που ξέρει το μοντέλο έχουν b_i και q_i
+    const known = interactions.filter((interaction) =>
+      model.eventFactors.has(interaction.eventId),
+    );
+
+    if (!known.length) {
+      return user;
+    }
+
+    const eventIds = [...model.eventFactors.keys()];
+    const seenByUser = new Map([
+      [userId, new Set(known.map((interaction) => interaction.eventId))],
+    ]);
+
+    for (let epoch = 0; epoch < foldInEpochs; epoch++) {
+      const epochInteractions = this.shuffle([
+        ...known,
+        ...this.sampleNegatives(seenByUser, eventIds, negativesPerPositive),
+      ]);
+
+      for (const interaction of epochInteractions) {
+        const eventBias = model.eventBias.get(interaction.eventId)!;
+        const eventFactors = model.eventFactors.get(interaction.eventId)!;
+
+        const prediction =
+          model.globalMean +
+          user.bias +
+          eventBias +
+          this.dot(user.factors, eventFactors);
+
+        const error = interaction.rating - prediction;
+
+        user.bias += learningRate * (error - regularization * user.bias);
+
+        for (let index = 0; index < factors; index++) {
+          user.factors[index] +=
+            learningRate *
+            (error * eventFactors[index] - regularization * user.factors[index]);
+        }
+      }
+    }
+
+    return user;
+  }
+
+
+
+   // Με userId φέρνει μόνο τις βαθμολογίες αυτού του χρήστη
+  private async loadAppInteractions(userId?: number): Promise<Interaction[]> {
     const bookings = await this.prisma.booking.findMany({
       where: {
         status: {
           not: 'CANCELLED',
         },
+        ...(userId ? { attendeeId: userId } : {}),
       },
       select: {
         attendeeId: true,
         eventId: true,
-        numberOfTickets: true,
       },
     });
 
     const views = await this.prisma.eventView.findMany({
+      where: userId ? { userId } : {},
       select: {
+
         userId: true,
         eventId: true,
       },
     });
 
-    const bookingInteractions: Interaction[] = bookings.map((booking) => ({
-      userId: booking.attendeeId,
-      eventId: booking.eventId,
-      rating: Math.min(5, 4 + booking.numberOfTickets * 0.25),
-    }));
+    const ratings = new Map<string, Interaction>();
 
-    const viewInteractions: Interaction[] = views.map((view) => ({
-      userId: view.userId,
-      eventId: view.eventId,
-      rating: 2,
-    }));
+    const setRating = (userId: number, eventId: number, rating: number) => {
+      const key = `${userId},${eventId}`;
+      const current = ratings.get(key);
 
-    return [...bookingInteractions, ...viewInteractions];
-  }
+      if (!current || current.rating < rating) {
+        ratings.set(key, { userId, eventId, rating });
+      }
+    };
 
-  private async loadDatasetInteractions(limit = 20000): Promise<Interaction[]> {
-    const datasetPath = join(
-      process.cwd(),
-      'private-data',
-      'recommendations',
-      'dataset',
-      'rel_event_csvs',
-      'event_interest.csv',
-    );
-
-    if (!existsSync(datasetPath)) {
-      return [];
+    for (const view of views) {
+      const viewedBefore = ratings.has(`${view.userId},${view.eventId}`);
+      setRating(view.userId, view.eventId, viewedBefore ? 4 : 3);
     }
 
-    const interactions: Interaction[] = [];
-    const file = createInterface({
-      input: createReadStream(datasetPath),
-      crlfDelay: Infinity,
-    });
-
-    let isHeader = true;
-
-    for await (const line of file) {
-      if (isHeader) {
-        isHeader = false;
-        continue;
-      }
-
-      if (interactions.length >= limit) {
-        break;
-      }
-
-      const [user, event, invited, , interested, notInterested] =
-        line.split(',');
-
-      const userId = Number(user);
-      const eventId = Number(event);
-
-      if (!Number.isFinite(userId) || !Number.isFinite(eventId)) {
-        continue;
-      }
-
-      let rating = 0;
-
-      if (notInterested === '1') {
-        rating = 1;
-      } else if (interested === '1') {
-        rating = 4;
-      } else if (invited === '1') {
-        rating = 2;
-      } else {
-        rating = 2.5;
-      }
-
-      interactions.push({
-        userId: -userId - 1,
-        eventId: -eventId - 1,
-        rating,
-      });
+    for (const booking of bookings) {
+      setRating(booking.attendeeId, booking.eventId, 5);
     }
 
-    return interactions;
+    return [...ratings.values()];
   }
+
+
 
   async findForUser(userId: number) {
-    const bookedEventIds = await this.prisma.booking.findMany({
-      where: {
-        attendeeId: userId,
-        status: {
-          not: 'CANCELLED',
-        },
-      },
-      select: {
-        eventId: true,
-      },
-      distinct: ['eventId'],
-    });
+    // Αν ο χρήστης δεν έχει κρατήσεις, εδώ υπάρχουν μόνο οι επισκέψεις του,
+    // άρα οι προτάσεις βγαίνουν μόνο από τις εκδηλώσεις που έχει δει
+    const userInteractions = await this.loadAppInteractions(userId);
+    const excludedEventIds = userInteractions.map(
+      (interaction) => interaction.eventId,
+    );
 
-    const viewedEventIds = await this.prisma.eventView.findMany({
-      where: {
-        userId,
-      },
-      select: {
-        eventId: true,
-      },
-      distinct: ['eventId'],
-    });
-
-    const excludedEventIds = [
-      ...bookedEventIds.map((booking) => booking.eventId),
-      ...viewedEventIds.map((view) => view.eventId),
-    ];
 
     const candidateEvents = await this.prisma.event.findMany({
       where: {
@@ -359,21 +450,31 @@ export class RecommendationsService {
       return [];
     }
 
-    const model = this.loadSavedModel();
+        const model = this.model;
 
     if (!model) {
       return this.fallbackRecommendations(candidateEvents);
     }
 
-    return candidateEvents
+    const user = this.foldInUser(model, userId, userInteractions);
+
+    const ranked = candidateEvents
+      .filter((event) => model.eventFactors.has(event.id))
       .map((event) => ({
         event,
-        score: this.predict(model, userId, event.id),
+        score: this.predict(model, user, event.id),
       }))
       .sort((a, b) => b.score - a.score)
-      .slice(0, 6)
       .map((recommendation) => recommendation.event);
+
+    // Εκδηλώσεις χωρίς καμία αλληλεπίδραση δεν υπάρχουν στο μοντέλο: μπαίνουν τελευταίες
+    const unknown = candidateEvents.filter(
+      (event) => !model.eventFactors.has(event.id),
+    );
+
+    return [...ranked, ...unknown].slice(0, 6);
   }
+
 
   private fallbackRecommendations<T extends { reservedSeats: number; startDateTime: Date }>(
     candidateEvents: T[],

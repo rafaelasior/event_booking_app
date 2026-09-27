@@ -25,6 +25,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prisma:seed": "tsx src/prisma/seed.ts",
     "prisma:message-seed": "tsx src/prisma/seed-messaging.ts",
+    "prisma:recommender-seed": "tsx src/prisma/seed-recommender.ts",
     "recommendations:train": "tsx src/recommendations/train-recommender.ts"
   },
   "dependencies": {

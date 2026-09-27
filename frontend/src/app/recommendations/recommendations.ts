@@ -7,7 +7,7 @@ import { EventItem } from '../events/events';
   providedIn: 'root',
 })
 export class Recommendations {
-  private readonly apiUrl = 'http://localhost:3000/recommendations';
+  private readonly apiUrl = 'https://localhost:3000/recommendations';
 
   constructor(private readonly http: HttpClient) {}
 

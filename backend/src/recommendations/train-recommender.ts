@@ -15,8 +15,6 @@ async function bootstrap() {
 
     console.log('Recommendation model trained.');
     console.log(`Model path: ${result.modelPath}`);
-    console.log(`Dataset interactions: ${result.datasetInteractions}`);
-    console.log(`App interactions: ${result.appInteractions}`);
     console.log(`Total interactions: ${result.totalInteractions}`);
   } finally {
     await app.close();
