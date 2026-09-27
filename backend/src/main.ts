@@ -1,9 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // σερβίρει τα ανεβασμένα αρχεία στο http://localhost:3000/uploads/...
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
   
 // Global ValidationPipe: τρέχει πριν από κάθε route handler.
 // 1. Μετατρέπει το plain JSON body σε instance της κλάσης DTO (class-transformer).

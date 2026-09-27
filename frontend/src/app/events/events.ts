@@ -187,6 +187,13 @@ export class Events {
     return this.http.post<EventItem>(`${this.apiUrl}/${eventId}/categories`, data);
   }
 
+  uploadPhoto(eventId: number, file: File): Observable<EventPhoto> {
+  const formData = new FormData();
+  formData.append('photo', file);   // ίδιο όνομα με το FileInterceptor('photo')
+  return this.http.post<EventPhoto>(`${this.apiUrl}/${eventId}/photos/upload`, formData);
+  }
+
+
   addPhoto(eventId: number, data: CreatePhotoRequest): Observable<EventPhoto> {
     return this.http.post<EventPhoto>(`${this.apiUrl}/${eventId}/photos`, data);
   }

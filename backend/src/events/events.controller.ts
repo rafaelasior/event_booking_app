@@ -9,6 +9,9 @@ import {
   Query,
   Req,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -21,6 +24,9 @@ import { SetEventCategoriesDto } from './dto/set-event-categories.dto';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 type RequestWithUser = {
   user: {
@@ -146,6 +152,27 @@ export class EventsController {
       createPhotoDto,
       request.user,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/photos/upload')
+  @UseInterceptors(FileInterceptor('photo', {
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (req, file, cb) => cb(null, `${Date.now()}${extname(file.originalname)}`),
+    }),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => cb(null, file.mimetype.startsWith('image/')),
+  }))
+  uploadPhoto(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() request: RequestWithUser,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Image file is required');
+    }
+    return this.eventsService.addPhoto(+id, { filePath: `/uploads/${file.filename}` }, request.user);
   }
 
   @UseGuards(JwtAuthGuard)

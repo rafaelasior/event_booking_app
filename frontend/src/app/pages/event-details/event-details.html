@@ -45,6 +45,14 @@
               {{ event.eventType }}
             </div>
           }
+          @if (event.photos && event.photos.length > 1) {
+          <div class="photo-gallery">
+            @for (photo of event.photos.slice(1); track photo.id) {
+              <img [src]="photo.filePath" [alt]="event.title" />
+            }
+          </div>
+          }
+
 
           <p class="event-meta">{{ event.eventType }} · {{ event.city }}</p>
           <h1>{{ event.title }}</h1>
