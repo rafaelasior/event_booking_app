@@ -59,6 +59,28 @@
       </div>
     </div>
 
+    <div class="mode-toggle" aria-label="Event list mode">
+      <button
+        type="button"
+        class="mode-button"
+        [class.active]="viewMode() === 'all'"
+        (click)="showAllEvents()"
+      >
+        All events
+      </button>
+
+      @if (auth.isLoggedIn()) {
+        <button
+          type="button"
+          class="mode-button"
+          [class.active]="viewMode() === 'recommended'"
+          (click)="showRecommendedEvents()"
+        >
+          ⭐ Recommended
+        </button>
+      }
+    </div>
+
     <form class="filters" (ngSubmit)="loadEvents()">
       <label>
         Search
@@ -145,55 +167,108 @@
       <button type="submit">Search</button>
     </form>
 
-    @if (loading()) {
-      <p class="state-message">Loading events...</p>
-    }
+    @if (viewMode() === 'all') {
+      @if (loading()) {
+        <p class="state-message">Loading events...</p>
+      }
 
-    @if (errorMessage()) {
-      <p class="error-message">{{ errorMessage() }}</p>
-    }
+      @if (errorMessage()) {
+        <p class="error-message">{{ errorMessage() }}</p>
+      }
 
-    @if (!loading() && !events().length) {
-      <p class="state-message">No events found.</p>
-    }
+      @if (!loading() && !events().length) {
+        <p class="state-message">No events found.</p>
+      }
 
-    @if (events().length) {
-      <div class="events-list">
-        @for (event of events(); track event.id) {
-          <article class="event-card">
-            <div class="event-main">
-              <div>
-                <p class="event-meta">
-                  {{ event.eventType }} · {{ event.city }}
-                </p>
+      @if (events().length) {
+        <div class="events-list">
+          @for (event of events(); track event.id) {
+            <article class="event-card">
+              <div class="event-main">
+                <div>
+                  <p class="event-meta">
+                    {{ event.eventType }} · {{ event.city }}
+                  </p>
 
-                <h2>{{ event.title }}</h2>
+                  <h2>{{ event.title }}</h2>
 
-                @if (categoryNames(event)) {
-                  <p class="categories">{{ categoryNames(event) }}</p>
-                }
+                  @if (categoryNames(event)) {
+                    <p class="categories">{{ categoryNames(event) }}</p>
+                  }
 
-                <p class="description">{{ event.description }}</p>
+                  <p class="description">{{ event.description }}</p>
+                </div>
+
+                <div class="event-side">
+                  <p class="date">{{ formatDate(event.startDateTime) }}</p>
+                  <p class="venue">{{ event.venue }}</p>
+
+                  @if (minimumPrice(event) !== null) {
+                    <p class="price">From €{{ minimumPrice(event) }}</p>
+                  }
+
+                  <p class="seats">{{ availableSeats(event) }} seats available</p>
+
+                  <a [routerLink]="['/events', event.id]" class="details-link">
+                    View details
+                  </a>
+                </div>
               </div>
+            </article>
+          }
+        </div>
+      }
+    } @else {
+      @if (recommendationsLoading()) {
+        <p class="state-message">Loading recommendations...</p>
+      }
 
-              <div class="event-side">
-                <p class="date">{{ formatDate(event.startDateTime) }}</p>
-                <p class="venue">{{ event.venue }}</p>
+      @if (recommendationsError()) {
+        <p class="error-message">{{ recommendationsError() }}</p>
+      }
 
-                @if (minimumPrice(event) !== null) {
-                  <p class="price">From €{{ minimumPrice(event) }}</p>
-                }
+      @if (!recommendationsLoading() && !recommendedEvents().length && !recommendationsError()) {
+        <p class="state-message">No recommendations yet. Browse a few events to improve suggestions.</p>
+      }
 
-                <p class="seats">{{ availableSeats(event) }} seats available</p>
+      @if (recommendedEvents().length) {
+        <div class="events-list">
+          @for (event of recommendedEvents(); track event.id) {
+            <article class="event-card recommended-card">
+              <div class="event-main">
+                <div>
+                  <p class="event-meta">
+                    {{ event.eventType }} · {{ event.city }}
+                  </p>
 
-                <a [routerLink]="['/events', event.id]" class="details-link">
-                  View details
-                </a>
+                  <h2>{{ event.title }}</h2>
+
+                  @if (categoryNames(event)) {
+                    <p class="categories">{{ categoryNames(event) }}</p>
+                  }
+
+                  <p class="description">{{ event.description }}</p>
+                </div>
+
+                <div class="event-side">
+                  <p class="date">{{ formatDate(event.startDateTime) }}</p>
+                  <p class="venue">{{ event.venue }}</p>
+
+                  @if (minimumPrice(event) !== null) {
+                    <p class="price">From €{{ minimumPrice(event) }}</p>
+                  }
+
+                  <p class="seats">{{ availableSeats(event) }} seats available</p>
+
+                  <a [routerLink]="['/events', event.id]" class="details-link">
+                    View details
+                  </a>
+                </div>
               </div>
-            </div>
-          </article>
-        }
-      </div>
+            </article>
+          }
+        </div>
+      }
     }
   </section>
 </main>

@@ -63,8 +63,17 @@ h1 {
   max-width: 610px;
 }
 
-.browse-section {
+.browse-section,
+.recommendations-section {
   padding: 42px clamp(20px, 5vw, 72px) 72px;
+}
+
+.recommended-card {
+  border-color: rgba(31, 111, 91, 0.24);
+}
+
+.recommendations-section .section-heading h2 {
+  margin-bottom: 0;
 }
 
 .section-heading {

@@ -8,6 +8,8 @@ import {
   Events,
 } from '../../events/events';
 import { Auth } from '../../auth/auth';
+import { Recommendations } from '../../recommendations/recommendations';
+
 
 @Component({
   selector: 'app-welcome',
@@ -20,6 +22,10 @@ export class Welcome implements OnInit {
   categories = signal<Category[]>([]);
   loading = signal(false);
   errorMessage = signal('');
+
+  recommendedEvents = signal<EventItem[]>([]);
+  recommendationsLoading = signal(false);
+  recommendationsError = signal('');
 
   filters: EventFilters = {
     search: '',
@@ -43,11 +49,15 @@ export class Welcome implements OnInit {
   constructor(
     private readonly eventsService: Events,
     public readonly auth: Auth,
+    private readonly recommendationsService: Recommendations,
   ) {}
 
   ngOnInit() {
     this.loadCategories();
     this.loadEvents();
+    if (this.auth.isLoggedIn()) {
+      this.loadRecommendations();
+    }
   }
 
   logout() {
@@ -78,6 +88,23 @@ export class Welcome implements OnInit {
         console.error('failed to load events:', error);
         this.errorMessage.set('Could not load events.');
         this.loading.set(false);
+      },
+    });
+  }
+
+  loadRecommendations() {
+    this.recommendationsLoading.set(true);
+    this.recommendationsError.set('');
+
+    this.recommendationsService.getRecommendations().subscribe({
+      next: (events) => {
+        this.recommendedEvents.set(events);
+        this.recommendationsLoading.set(false);
+      },
+      error: (error) => {
+        console.error('failed to load recommendations:', error);
+        this.recommendationsError.set('Could not load recommendations.');
+        this.recommendationsLoading.set(false);
       },
     });
   }

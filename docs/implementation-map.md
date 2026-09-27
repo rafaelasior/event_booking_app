@@ -21,7 +21,7 @@ Database source of truth:
 - Οι χρήστες εγκρίνονται από admin πριν αποκτήσουν πλήρη πρόσβαση.
 - Τα protected backend endpoints ελέγχουν JWT και δικαιώματα. Το frontend βοηθάει το UX, αλλά δεν θεωρείται security boundary.
 - Τα IDs από URL params/query params φτάνουν ως strings και μετατρέπονται σε numbers πριν δοθούν στην Prisma.
-- Τα photos αποθηκεύονται ως URL/path references, όχι ως binary upload.
+- Τα photos αποθηκεύονται ως path/URL references στη βάση. Υπάρχει και image upload endpoint που αποθηκεύει αρχείο στο backend και κρατά το path.
 - Για local development δεν υπάρχει SSL/TLS. Για τελική παρουσίαση/production θα πρέπει να χρησιμοποιηθεί HTTPS από hosting/reverse proxy.
 
 ## Backend Map
@@ -38,7 +38,7 @@ Status: implemented.
 
 Ρόλος:
 
-- Το `AppModule` συνδέει `UsersModule`, `AuthModule`, `EventsModule`, `BookingsModule`, `MessagesModule` και `PrismaModule`.
+- Το `AppModule` συνδέει `UsersModule`, `AuthModule`, `EventsModule`, `BookingsModule`, `MessagesModule`, `ExportsModule`, `RecommendationsModule` και `PrismaModule`.
 - Το `PrismaService` είναι η κοινή πρόσβαση στη βάση για όλα τα services.
 
 Σχεδιαστική απόφαση:
@@ -139,22 +139,26 @@ Backend endpoints:
 - `POST /events/categories`
 - `POST /events/:id/categories`
 - `POST /events/:id/photos`
+- `POST /events/:id/photos/upload`
 - `DELETE /events/:id/photos/:photoId`
+- `POST /events/:id/view`
 
 Υλοποιήθηκαν:
 
 - Event flow: create, list, details, update/manage.
-- Public browsing με filters: `status`, `city`, `eventType`, `search`, `categoryId`.
+- Public browsing με filters: `status`, `city`, `eventType`, `search`, `categoryId`, `dateFrom`, `dateTo`, `minPrice`, `maxPrice`.
 - Organizer list μέσω `GET /events/my`.
 - Status actions: publish, cancel, delete.
 - Ticket types: create, update, delete.
 - Categories: list, admin create, assign to event.
-- Photos: add/delete URL or path references.
+- Photos: add/delete URL/path references και image upload μέσω Multer.
+- Event view tracking για logged-in users, ώστε να χρησιμοποιείται από το recommendation system.
 - OpenStreetMap/Nominatim geocoding στο create event με βάση `address + city + country`.
 - Embedded OpenStreetMap preview σε create/details όταν υπάρχουν coordinates.
 - Manage page για details, publish/cancel/delete, ticket types, categories και photos.
 - My Events page ως organizer dashboard με `View`, `Manage`, `Bookings`.
 - Event bookings page για να βλέπει ο organizer τις κρατήσεις συγκεκριμένου event.
+- Admin-only export buttons σε XML/JSON από το events page.
 
 Σχεδιαστικές αποφάσεις:
 
@@ -182,6 +186,7 @@ Validation / κανόνες:
 Testing:
 
 - Δοκιμάστηκαν με curl: create/list/details/update/publish/cancel/delete, filters, ticket types, categories και photos.
+- Δοκιμάστηκε event view recording ως input για recommendations.
 - Frontend build πέρασε μετά τη σύνδεση event pages.
 - Manual frontend flow σε εξέλιξη: create event, geocoding/map, manage, publish/cancel/delete, my events, event bookings.
 
@@ -248,6 +253,66 @@ Status: implemented.
 
 - Θέλει τελικό integration testing με πραγματικά bookings/events, ειδικά για organizer-attendee επικοινωνία και cancellation announcements.
 
+### Exports
+
+Status: implemented and frontend-connected.
+
+Αρχεία:
+
+- `backend/src/exports/*`
+- `frontend/src/app/admin/admin-export.ts`
+- `frontend/src/app/pages/events/*`
+
+Υλοποιήθηκαν:
+
+- Admin-only export για events σε XML και JSON.
+- Τα export buttons εμφανίζονται στο `/events` μόνο για admin users.
+- Το backend ελέγχει πραγματικά το admin role με `JwtAuthGuard` και `RolesGuard`, άρα το frontend visibility είναι μόνο UX.
+
+Σχεδιαστική απόφαση:
+
+- Τα exports τοποθετήθηκαν στο events page, επειδή αφορούν τα events συνολικά και όχι τη διαχείριση χρηστών.
+
+### Recommendations
+
+Status: implemented, trained locally, frontend-connected.
+
+Αρχεία:
+
+- `backend/src/recommendations/*`
+- `backend/src/recommendations/train-recommender.ts`
+- `frontend/src/app/recommendations/recommendations.ts`
+- `frontend/src/app/pages/welcome/*`
+- `frontend/src/app/pages/events/*`
+
+Backend endpoints / scripts:
+
+- `GET /recommendations`
+- `npm run recommendations:train`
+
+Υλοποιήθηκαν:
+
+- Recommendation module με protected endpoint για logged-in users.
+- Καταγραφή event views μέσω `POST /events/:id/view`.
+- Training interactions από app data: bookings ως ισχυρό positive signal και event views ως ασθενέστερο interest signal.
+- Training interactions από δοσμένο dataset `event_interest.csv`.
+- Basic Matrix Factorization model με user/event biases και latent factors.
+- Local pretraining script που αποθηκεύει model σε `backend/private-data/recommendations/model.json`.
+- Frontend recommendations στην αρχική για logged-in users.
+- Recommended mode στο `/events` page.
+
+Σχεδιαστικές αποφάσεις / παραδοχές:
+
+- Το dataset και το trained model δεν μπαίνουν στο git. Φυλάσσονται κάτω από `backend/private-data/`, που είναι ignored.
+- Τα dataset user/event IDs μετατρέπονται σε αρνητικά IDs για να μην συγκρουστούν με τα πραγματικά app IDs.
+- Αν δεν υπάρχει trained model ή αρκετά app interactions, το backend κάνει fallback σε popular/upcoming published events.
+- Οι recommendations δεν εμφανίζουν events που έχει ήδη δει/κλείσει ο χρήστης, ούτε events που οργανώνει ο ίδιος.
+
+Testing:
+
+- Το training script έτρεξε επιτυχώς: Dataset interactions 14978, App interactions 3, Total interactions 14981.
+- Το `/recommendations` δοκιμάστηκε με JWT και επέστρεψε published future events.
+
 ## Database Map
 
 Αρχείο:
@@ -278,7 +343,8 @@ Enums:
 - Event organizer είναι σχέση `Event.organizerId -> User.id`.
 - Categories έχουν many-to-many σχέση με events μέσω `EventCategory`.
 - Ticket types ανήκουν σε event και κρατούν `quantity` / `available`.
-- Photos κρατούν path/URL reference, όχι binary files στη βάση.
+- Photos κρατούν path/URL reference στη βάση.
+- `EventView` κρατάει user-event views για recommendations.
 
 Seed data:
 
@@ -318,6 +384,8 @@ Status: main flows implemented; polish/testing συνεχίζονται.
 - Event Bookings page.
 - My Bookings page.
 - Messages pages.
+- Recommendations στην αρχική και στο events page.
+- Admin-only export buttons στο events page.
 - Shared palette/navbar/button styling στο `styles.css`.
 
 Σχεδιαστικές αποφάσεις:
@@ -328,6 +396,8 @@ Status: main flows implemented; polish/testing συνεχίζονται.
 - Τα dangerous organizer actions βρίσκονται στο manage page, όχι απευθείας στο My Events.
 - `Create event` δημιουργεί draft και μετά οδηγεί στο manage page για τελικό έλεγχο/publish.
 - Geocoding χρησιμοποιεί address/city/country, όχι venue, επειδή venue names μπορεί να μπερδεύουν το OpenStreetMap.
+- Τα recommendations εμφανίζονται μόνο σε logged-in users, επειδή χρειάζονται προσωπικό user context.
+- Event views καταγράφονται μόνο για logged-in users και όχι για τον organizer του event.
 
 Build / testing:
 
@@ -352,11 +422,11 @@ Build / testing:
 
 - Τα generated specs/tests χρειάζονται update επειδή πολλά services έχουν dependencies όπως `PrismaService`.
 - Υπάρχουν npm audit warnings που αποφασίστηκε να μείνουν προσωρινά μέχρι συζήτηση με την ομάδα.
-- File upload δεν έχει υλοποιηθεί. Προς το παρόν οι photos είναι URL/path strings.
+- File upload υπάρχει για event photos, αλλά θέλει τελικό browser testing μαζί με την προβολή εικόνων.
 - SSL/TLS δεν έχει υλοποιηθεί τοπικά. Πρέπει να καλυφθεί σε deployment/report.
 - Χρειάζεται τελικό end-to-end testing σε booking + event bookings + messaging.
 - Θέλει τελικό cleanup των shared CSS ώστε να μειωθεί duplication σε pages.
-- Admin export XML/JSON και recommendations πρέπει να αξιολογηθούν ως επόμενη προτεραιότητα.
+- Recommendations υπάρχουν, αλλά η ποιότητά τους θα βελτιώνεται όσο αυξάνονται πραγματικά views/bookings στο app.
 
 ## Επόμενα Βήματα
 
@@ -365,6 +435,7 @@ Build / testing:
 3. Integration test booking flow: event details -> book -> my bookings -> organizer event bookings.
 4. Test cancellation: event cancel -> bookings status/message behavior.
 5. Update specs ή τουλάχιστον καταγραφή ότι τα generated specs είναι εκτός sync.
-6. Admin exports XML/JSON.
-7. Recommendations / proposed events section, αν προλάβουμε.
-8. Τελικό report PDF με βάση αυτό το αρχείο.
+6. Τελικό browser test για photo upload/display.
+7. Τελικό browser test για recommendations στο welcome και events page.
+8. SSL/TLS και hosting/deployment.
+9. Τελικό report PDF με βάση αυτό το αρχείο.

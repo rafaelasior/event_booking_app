@@ -10,6 +10,7 @@ import {
 import { Auth } from '../../auth/auth';
 import { finalize } from 'rxjs';
 import { AdminExport, ExportFormat } from '../../admin/admin-export';
+import { Recommendations } from '../../recommendations/recommendations';
 
 @Component({
   selector: 'app-events-page',
@@ -23,6 +24,10 @@ export class EventsPage implements OnInit {
   loading = signal(false);
   errorMessage = signal('');
   exporting = signal<ExportFormat | null>(null);
+  recommendedEvents = signal<EventItem[]>([]);
+  recommendationsLoading = signal(false);
+  recommendationsError = signal('');
+  viewMode = signal<'all' | 'recommended'>('all');
 
   filters: EventFilters = {
     search: '',
@@ -51,6 +56,7 @@ export class EventsPage implements OnInit {
     private readonly eventsService: EventsService,
     public readonly auth: Auth,
     private readonly adminExport: AdminExport,
+    private readonly recommendationsService: Recommendations,
   ) {}
 
   ngOnInit() {
@@ -82,6 +88,41 @@ export class EventsPage implements OnInit {
         console.error('failed to load events:', error);
         this.errorMessage.set('Could not load events.');
         this.loading.set(false);
+      },
+    });
+  }
+
+  showAllEvents() {
+    this.viewMode.set('all');
+  }
+
+  showRecommendedEvents() {
+    this.viewMode.set('recommended');
+
+    if (this.recommendedEvents().length) {
+      return;
+    }
+
+    this.loadRecommendations();
+  }
+
+  loadRecommendations() {
+    if (!this.auth.isLoggedIn()) {
+      return;
+    }
+
+    this.recommendationsLoading.set(true);
+    this.recommendationsError.set('');
+
+    this.recommendationsService.getRecommendations().subscribe({
+      next: (events) => {
+        this.recommendedEvents.set(events);
+        this.recommendationsLoading.set(false);
+      },
+      error: (error) => {
+        console.error('failed to load recommendations:', error);
+        this.recommendationsError.set('Could not load recommendations.');
+        this.recommendationsLoading.set(false);
       },
     });
   }
