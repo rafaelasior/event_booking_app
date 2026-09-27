@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Booking, Bookings } from '../../bookings/bookings';
+import { Auth } from '../../auth/auth';
 
 @Component({
   selector: 'app-my-bookings',
@@ -14,7 +15,9 @@ export class MyBookings implements OnInit {
   loaded = signal(false);
   errorMessage = signal('');
 
-  constructor(private readonly bookingsService: Bookings) {}
+  constructor(private readonly bookingsService: Bookings,
+    public readonly auth: Auth,
+  ) {}
 
   ngOnInit() {
     this.bookingsService.getMine().subscribe({

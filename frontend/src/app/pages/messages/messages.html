@@ -1,5 +1,25 @@
+<nav class="top-nav">
+  <a routerLink="/" class="brand">Event Booking</a>
+
+  <div class="nav-actions">
+    <a routerLink="/events">Browse Events</a>
+
+    @if (auth.isLoggedIn()) {
+      <a routerLink="/events/my">My Events</a>
+      <a routerLink="/bookings">My Bookings</a>
+      <a routerLink="/profile" class="profile-icon" aria-label="Profile">
+        <span aria-hidden="true">👤</span>
+      </a>
+    } @else {
+      <a routerLink="/login">Sign in</a>
+      <a routerLink="/register" class="primary-link">Register</a>
+    }
+  </div>
+</nav>
+
 <!--admin-page and admin-panel is the global layout from style.css-->
 <main class="admin-page">
+
   <section class="admin-panel">
     <div class="messages-header">
       <h1>Messages</h1>

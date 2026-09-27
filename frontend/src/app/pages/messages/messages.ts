@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { Message, Messages } from '../../messages/messages';
+import { Auth } from '../../auth/auth';
 
 type Box = 'inbox' | 'sent';
 
@@ -21,6 +22,7 @@ export class MessagesPage implements OnInit {
   constructor(
     private readonly route: ActivatedRoute,
     protected readonly messagesService: Messages, // protected: το διαβάζει το template
+    public readonly auth: Auth,
   ) {}
 
   ngOnInit() {
@@ -29,6 +31,10 @@ export class MessagesPage implements OnInit {
       this.box.set(params.get('box') === 'sent' ? 'sent' : 'inbox');
       this.load();
     });
+  }
+
+  logout() {
+    this.auth.logout();
   }
 
   load() {
