@@ -81,7 +81,7 @@
       }
     </div>
 
-    <form class="filters" (ngSubmit)="loadEvents(1)">
+    <form class="filters" (ngSubmit)="searchEvents()">
       <label>
         Search
         <input
@@ -263,13 +263,15 @@
         <p class="error-message">{{ recommendationsError() }}</p>
       }
 
-      @if (!recommendationsLoading() && !recommendedEvents().length && !recommendationsError()) {
-        <p class="state-message">No recommendations yet. Browse a few events to improve suggestions.</p>
+      @if (!recommendationsLoading() && !filteredRecommendedEvents().length && !recommendationsError()) {
+        <p class="state-message">
+          {{ recommendedEvents().length ? 'No recommended events match these filters.' : 'No recommendations yet. Browse a few events to improve suggestions.' }}
+        </p>
       }
 
-      @if (recommendedEvents().length) {
+      @if (filteredRecommendedEvents().length) {
         <div class="events-list">
-          @for (event of recommendedEvents(); track event.id) {
+          @for (event of filteredRecommendedEvents(); track event.id) {
             <article class="event-card recommended-card">
               <div class="event-main">
                 @if (eventPhotoUrl(event)) {

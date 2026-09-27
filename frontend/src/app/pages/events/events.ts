@@ -81,6 +81,18 @@ export class EventsPage implements OnInit {
     });
   }
 
+  searchEvents() {
+    if (this.viewMode() === 'recommended') {
+      if (!this.recommendedEvents().length) {
+        this.loadRecommendations();
+      }
+
+      return;
+    }
+
+    this.loadEvents(1);
+  }
+
   loadEvents(page = this.page()) {
     this.loading.set(true);
     this.errorMessage.set('');
@@ -104,6 +116,66 @@ export class EventsPage implements OnInit {
 
   showAllEvents() {
     this.viewMode.set('all');
+  }
+
+  filteredRecommendedEvents() {
+    return this.recommendedEvents().filter((event) => this.matchesFilters(event));
+  }
+
+  private matchesFilters(event: EventItem) {
+    const search = this.filters.search?.trim().toLowerCase();
+    const city = this.filters.city?.trim().toLowerCase();
+    const categoryId = this.filters.categoryId ? Number(this.filters.categoryId) : null;
+    const minPrice = this.filters.minPrice ? Number(this.filters.minPrice) : null;
+    const maxPrice = this.filters.maxPrice ? Number(this.filters.maxPrice) : null;
+    const eventDate = new Date(event.startDateTime).getTime();
+
+    if (search) {
+      const searchable = [
+        event.title,
+        event.description,
+        event.venue,
+        event.address,
+        event.city,
+        event.country,
+      ].join(' ').toLowerCase();
+
+      if (!searchable.includes(search)) {
+        return false;
+      }
+    }
+
+    if (city && !event.city.toLowerCase().includes(city)) {
+      return false;
+    }
+
+    if (this.filters.eventType && event.eventType !== this.filters.eventType) {
+      return false;
+    }
+
+    if (categoryId && !event.eventCategories?.some((eventCategory) => eventCategory.categoryId === categoryId)) {
+      return false;
+    }
+
+    if (this.filters.dateFrom && eventDate < new Date(this.filters.dateFrom).getTime()) {
+      return false;
+    }
+
+    if (this.filters.dateTo && eventDate > new Date(this.filters.dateTo).getTime()) {
+      return false;
+    }
+
+    const price = this.minimumPrice(event);
+
+    if (minPrice !== null && (price === null || price < minPrice)) {
+      return false;
+    }
+
+    if (maxPrice !== null && (price === null || price > maxPrice)) {
+      return false;
+    }
+
+    return true;
   }
 
   previousPage() {
@@ -166,7 +238,9 @@ export class EventsPage implements OnInit {
       status: 'PUBLISHED',
     };
 
-    this.loadEvents(1);
+    if (this.viewMode() === 'all') {
+      this.loadEvents(1);
+    }
   }
 
   formatDate(value: string) {
