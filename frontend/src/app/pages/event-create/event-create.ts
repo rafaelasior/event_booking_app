@@ -55,7 +55,6 @@ export class EventCreate {
     this.locationMessage.set('');
 
     const query = [
-        this.form.venue,
         this.form.address,
         this.form.city,
         this.form.country,
@@ -64,7 +63,7 @@ export class EventCreate {
         .join(', ');
 
     if (!query) {
-        this.locationMessage.set('Fill venue, address, city or country first.');
+        this.locationMessage.set('Fill address, city or country first.');
         return;
     }
 

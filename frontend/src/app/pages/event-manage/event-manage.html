@@ -1,0 +1,213 @@
+<main class="manage-page">
+  <nav class="top-nav">
+    <a routerLink="/" class="brand">Event Booking</a>
+
+    <div class="nav-actions">
+      <a routerLink="/events">Browse</a>
+      <a routerLink="/events/my">My Events</a>
+      <a routerLink="/messages">Messages</a>
+      <a routerLink="/profile" class="profile-icon" aria-label="Profile">
+        <span aria-hidden="true">👤</span>
+      </a>
+    </div>
+  </nav>
+
+  <section class="manage-shell">
+    <a routerLink="/events/my" class="back-link">Back to my events</a>
+
+    @if (loading()) {
+      <p class="state-message">Loading event...</p>
+    }
+
+    @if (errorMessage()) {
+      <p class="error-message">{{ errorMessage() }}</p>
+    }
+
+    @if (successMessage()) {
+      <p class="success-message">{{ successMessage() }}</p>
+    }
+
+    @if (event(); as event) {
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">Manage event</p>
+          <h1>{{ event.title }}</h1>
+          <p>Status: <strong>{{ event.status }}</strong></p>
+        </div>
+
+        <div class="heading-actions">
+          <a [routerLink]="['/events', event.id]" class="btn revoke">View</a>
+
+          @if (event.status === 'DRAFT') {
+            <button type="button" class="btn approve" (click)="publish()">Publish</button>
+            <button type="button" class="btn reject" (click)="deleteEvent()">Delete</button>
+          }
+
+          @if (event.status === 'PUBLISHED') {
+            <button type="button" class="btn reject" (click)="cancel()">Cancel</button>
+          }
+        </div>
+      </div>
+
+      <section class="manage-grid">
+        <article class="panel">
+          <h2>Details</h2>
+
+          <form class="details-form" (ngSubmit)="saveDetails()">
+            <label class="full-row">
+              Title
+              <input required type="text" name="title" [(ngModel)]="detailsForm.title" />
+            </label>
+
+            <label>
+              Event type
+              <select required name="eventType" [(ngModel)]="detailsForm.eventType">
+                @for (eventType of eventTypes; track eventType) {
+                  <option [value]="eventType">{{ eventType }}</option>
+                }
+              </select>
+            </label>
+
+            <label>
+              Capacity
+              <input required type="number" min="1" name="capacity" [(ngModel)]="detailsForm.capacity" />
+            </label>
+
+            <label>
+              Venue
+              <input required type="text" name="venue" [(ngModel)]="detailsForm.venue" />
+            </label>
+
+            <label>
+              Address
+              <input required type="text" name="address" [(ngModel)]="detailsForm.address" />
+            </label>
+
+            <label>
+              City
+              <input required type="text" name="city" [(ngModel)]="detailsForm.city" />
+            </label>
+
+            <label>
+              Country
+              <input required type="text" name="country" [(ngModel)]="detailsForm.country" />
+            </label>
+
+            <label>
+              Start date/time
+              <input required type="datetime-local" name="startDateTime" [(ngModel)]="detailsForm.startDateTime" />
+            </label>
+
+            <label>
+              End date/time
+              <input required type="datetime-local" name="endDateTime" [(ngModel)]="detailsForm.endDateTime" />
+            </label>
+
+            <label class="full-row">
+              Description
+              <textarea required rows="5" name="description" [(ngModel)]="detailsForm.description"></textarea>
+            </label>
+
+            <div class="form-actions full-row">
+              <button type="submit" class="btn primary" [disabled]="saving()">
+                {{ saving() ? 'Saving...' : 'Save details' }}
+              </button>
+            </div>
+          </form>
+        </article>
+
+        <article class="panel">
+          <h2>Ticket types</h2>
+
+          @if (event.ticketTypes?.length) {
+            <div class="item-list">
+              @for (ticket of event.ticketTypes; track ticket.id) {
+                <div class="item-row">
+                  <div>
+                    <strong>{{ ticket.name }}</strong>
+                    <span>€{{ ticket.price }} · {{ ticket.available }}/{{ ticket.quantity }} available</span>
+                  </div>
+
+                  <button type="button" class="btn reject" (click)="deleteTicketType(ticket)">
+                    Delete
+                  </button>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="muted">No ticket types yet.</p>
+          }
+
+          <form class="mini-form" (ngSubmit)="addTicketType()">
+            <label>
+              Name
+              <input required type="text" name="ticketName" [(ngModel)]="ticketForm.name" />
+            </label>
+
+            <label>
+              Price
+              <input required type="number" min="0" step="0.01" name="ticketPrice" [(ngModel)]="ticketForm.price" />
+            </label>
+
+            <label>
+              Quantity
+              <input required type="number" min="1" name="ticketQuantity" [(ngModel)]="ticketForm.quantity" />
+            </label>
+
+            <button type="submit" class="btn primary">Add ticket</button>
+          </form>
+        </article>
+
+        <article class="panel">
+          <h2>Categories</h2>
+
+          <div class="category-grid">
+            @for (category of categories(); track category.id) {
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  [name]="'category-' + category.id"
+                  [(ngModel)]="selectedCategoryIds[category.id]"
+                />
+                {{ category.name }}
+              </label>
+            }
+          </div>
+
+          <button type="button" class="btn primary" (click)="saveCategories()">
+            Save categories
+          </button>
+        </article>
+
+        <article class="panel">
+          <h2>Photos</h2>
+
+          @if (event.photos?.length) {
+            <div class="photo-list">
+              @for (photo of event.photos; track photo.id) {
+                <div class="photo-row">
+                  <img [src]="photo.filePath" alt="" />
+                  <span>{{ photo.filePath }}</span>
+                  <button type="button" class="btn reject" (click)="deletePhoto(photo.id)">
+                    Delete
+                  </button>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="muted">No photos yet.</p>
+          }
+
+          <form class="mini-form" (ngSubmit)="addPhoto()">
+            <label>
+              Photo URL
+              <input required type="url" name="photoUrl" [(ngModel)]="photoForm.filePath" />
+            </label>
+
+            <button type="submit" class="btn primary">Add photo</button>
+          </form>
+        </article>
+      </section>
+    }
+  </section>
+</main>

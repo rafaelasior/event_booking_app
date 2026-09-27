@@ -91,6 +91,10 @@
                     View
                   </a>
 
+                  <a [routerLink]="['/events', event.id, 'manage']" class="btn primary">
+                    Manage
+                  </a>
+
                   @if (event.status === 'DRAFT') {
                     <button
                       type="button"

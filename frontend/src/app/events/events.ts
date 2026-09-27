@@ -82,6 +82,25 @@ export type Category = {
   name: string;
 };
 
+export type UpdateEventRequest = Partial<CreateEventRequest>;
+
+export type CreateTicketTypeRequest = {
+  name: string;
+  price: number;
+  quantity: number;
+};
+
+export type UpdateTicketTypeRequest = Partial<CreateTicketTypeRequest>;
+
+export type SetEventCategoriesRequest = {
+  categoryIds: number[];
+};
+
+export type CreatePhotoRequest = {
+  filePath: string;
+};
+
+
 @Injectable({
   providedIn: 'root',
 })
@@ -128,5 +147,53 @@ export class Events {
 
   deleteEvent(id: number): Observable<EventItem> {
     return this.http.delete<EventItem>(`${this.apiUrl}/${id}`);
+  }
+
+  updateEvent(id: number, data: UpdateEventRequest): Observable<EventItem> {
+    return this.http.patch<EventItem>(`${this.apiUrl}/${id}`, data);
+  }
+
+  createTicketType(
+    eventId: number,
+    data: CreateTicketTypeRequest,
+  ): Observable<TicketType> {
+    return this.http.post<TicketType>(
+      `${this.apiUrl}/${eventId}/ticket-types`,
+      data,
+    );
+  }
+
+  updateTicketType(
+    eventId: number,
+    ticketTypeId: number,
+    data: UpdateTicketTypeRequest,
+  ): Observable<TicketType> {
+    return this.http.patch<TicketType>(
+      `${this.apiUrl}/${eventId}/ticket-types/${ticketTypeId}`,
+      data,
+    );
+  }
+
+  deleteTicketType(eventId: number, ticketTypeId: number): Observable<TicketType> {
+    return this.http.delete<TicketType>(
+      `${this.apiUrl}/${eventId}/ticket-types/${ticketTypeId}`,
+    );
+  }
+
+  setEventCategories(
+    eventId: number,
+    data: SetEventCategoriesRequest,
+  ): Observable<EventItem> {
+    return this.http.post<EventItem>(`${this.apiUrl}/${eventId}/categories`, data);
+  }
+
+  addPhoto(eventId: number, data: CreatePhotoRequest): Observable<EventPhoto> {
+    return this.http.post<EventPhoto>(`${this.apiUrl}/${eventId}/photos`, data);
+  }
+
+  deletePhoto(eventId: number, photoId: number): Observable<EventPhoto> {
+    return this.http.delete<EventPhoto>(
+      `${this.apiUrl}/${eventId}/photos/${photoId}`,
+    );
   }
 }
