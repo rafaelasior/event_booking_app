@@ -276,12 +276,13 @@ Status: implemented and frontend-connected.
 
 ### Recommendations
 
-Status: implemented, trained locally, frontend-connected.
+Status: implemented, tested, frontend-connected.
 
 Αρχεία:
 
 - `backend/src/recommendations/*`
 - `backend/src/recommendations/train-recommender.ts`
+- `backend/src/prisma/seed-recommender.ts`
 - `frontend/src/app/recommendations/recommendations.ts`
 - `frontend/src/app/pages/welcome/*`
 - `frontend/src/app/pages/events/*`
@@ -289,30 +290,36 @@ Status: implemented, trained locally, frontend-connected.
 Backend endpoints / scripts:
 
 - `GET /recommendations`
-- `npm run recommendations:train`
+- `POST /events/:id/view`
+- `npm run prisma:recommender-seed`
+- `npm run recommendations:train` (εκπαίδευση + αξιολόγηση)
 
 Υλοποιήθηκαν:
 
-- Recommendation module με protected endpoint για logged-in users.
-- Καταγραφή event views μέσω `POST /events/:id/view`.
-- Training interactions από app data: bookings ως ισχυρό positive signal και event views ως ασθενέστερο interest signal.
-- Training interactions από δοσμένο dataset `event_interest.csv`.
-- Basic Matrix Factorization model με user/event biases και latent factors.
-- Local pretraining script που αποθηκεύει model σε `backend/private-data/recommendations/model.json`.
-- Frontend recommendations στην αρχική για logged-in users.
-- Recommended mode στο `/events` page.
+- Biased Matrix Factorization από το μηδέν: `r̂ = μ + b_u + b_i + p_u·q_i`, εκπαίδευση με SGD και L2 regularization.
+- Seed από το dataset του e-class: οι 300 εκδηλώσεις με τους περισσότερους χρήστες και οι χρήστες με τουλάχιστον 2 από αυτές γίνονται `User` (`ds_*`), `Event`, `Booking` (`yes`) και `EventView` (`maybe` / `interested`).
+- Βαθμολογίες: μία ανά (χρήστη, εκδήλωση), η μέγιστη. Επίσκεψη 3, δεύτερη επίσκεψη 4, κράτηση 5.
+- Negative sampling: σε κάθε εποχή 3 τυχαίες εκδηλώσεις που ο χρήστης δεν έχει αγγίξει, με βαθμό 1, για κάθε θετική.
+- Εκπαίδευση στην εκκίνηση του server και κάθε 10 λεπτά. Το μοντέλο κρατιέται στη μνήμη και αποθηκεύεται στο `backend/private-data/recommendations/model.json`.
+- Fold-in σε κάθε αίτημα: τα `b_u`, `p_u` του χρήστη υπολογίζονται από τις τωρινές κρατήσεις/επισκέψεις του, με σταθερά τα `b_i`, `q_i`.
+- Αξιολόγηση leave-one-out (HR@10 έναντι δημοφιλίας και τυχαίας επιλογής, RMSE ανά εποχή).
+- Frontend recommendations στην αρχική και Recommended mode στο `/events` page.
 
 Σχεδιαστικές αποφάσεις / παραδοχές:
 
 - Το dataset και το trained model δεν μπαίνουν στο git. Φυλάσσονται κάτω από `backend/private-data/`, που είναι ignored.
-- Τα dataset user/event IDs μετατρέπονται σε αρνητικά IDs για να μην συγκρουστούν με τα πραγματικά app IDs.
-- Αν δεν υπάρχει trained model ή αρκετά app interactions, το backend κάνει fallback σε popular/upcoming published events.
-- Οι recommendations δεν εμφανίζουν events που έχει ήδη δει/κλείσει ο χρήστης, ούτε events που οργανώνει ο ίδιος.
+- Το dataset φορτώνεται στη βάση, ώστε οι χρήστες του και οι πραγματικοί χρήστες να είναι στον ίδιο πίνακα. Οι ημερομηνίες του (2012) μετατοπίζονται στο μέλλον.
+- Τα `no`, `not_interested` και `invited` του dataset αγνοούνται. Τα αρνητικά προέρχονται από το negative sampling.
+- Χρήστης χωρίς κρατήσεις: οι βαθμολογίες του προκύπτουν μόνο από τις επισκέψεις του, άρα και οι προτάσεις.
+- Χρήστης χωρίς καμία αλληλεπίδραση: σειρά κατά `μ + b_i`. Χωρίς μοντέλο: κατά κρατημένες θέσεις.
+- Εξαιρούνται events που δεν είναι published, έχουν περάσει, είναι του ίδιου του χρήστη, τα έχει ήδη δει/κλείσει ή είναι γεμάτα.
+- Events χωρίς καμία αλληλεπίδραση δεν υπάρχουν στο μοντέλο και μπαίνουν στο τέλος.
+- Παράμετροι: `k = 16`, `η = 0.02`, `λ = 0.05`, 60 εποχές, αρνητικά 3:1, 50 εποχές fold-in.
 
 Testing:
 
-- Το training script έτρεξε επιτυχώς: Dataset interactions 14978, App interactions 3, Total interactions 14981.
-- Το `/recommendations` δοκιμάστηκε με JWT και επέστρεψε published future events.
+- `npx jest recommendations`: 8 tests (βαθμολογίες, πτώση RMSE, χρήστης με κρατήσεις, χρήστης μόνο με επισκέψεις, χρήστης χωρίς αλληλεπιδράσεις, fallback χωρίς μοντέλο, εξαιρέσεις, controller).
+- `npm run recommendations:train` με τα δεδομένα του seed (2612 interactions, 778 users): RMSE 1.36 → 0.63, HR@10 ~51% έναντι ~22% δημοφιλίας και ~3.5% τυχαίας επιλογής.
 
 ## Database Map
 

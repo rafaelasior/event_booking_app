@@ -139,7 +139,93 @@ export class RecommendationsService implements OnModuleInit, OnModuleDestroy {
       totalInteractions: interactions.length,
     };
   }
-  
+
+  // Leave-one-out: κρύβει μία αλληλεπίδραση ανά χρήστη, εκπαιδεύει χωρίς αυτήν
+  // και μετράει πόσο συχνά η κρυμμένη εκδήλωση μπαίνει στις topN πρώτες
+  async evaluate(topN = 10) {
+    const interactions = await this.loadAppInteractions();
+    const byUser = new Map<number, Interaction[]>();
+
+    for (const interaction of interactions) {
+      if (!byUser.has(interaction.userId)) {
+        byUser.set(interaction.userId, []);
+      }
+
+      byUser.get(interaction.userId)!.push(interaction);
+    }
+
+    const training: Interaction[] = [];
+    const hidden: Interaction[] = [];
+
+    for (const userInteractions of byUser.values()) {
+      if (userInteractions.length < 2) {
+        training.push(...userInteractions);
+        continue;
+      }
+
+      const hiddenIndex = Math.floor(Math.random() * userInteractions.length);
+
+      hidden.push(userInteractions[hiddenIndex]);
+      training.push(
+        ...userInteractions.filter((_, index) => index !== hiddenIndex),
+      );
+    }
+
+    const rmseByEpoch: number[] = [];
+    const model = this.trainModel(training, (_, rmse) => rmseByEpoch.push(rmse));
+
+    // Δημοφιλία = πόσοι χρήστες αλληλεπίδρασαν με κάθε εκδήλωση
+    const popularity = new Map<number, number>();
+
+    for (const interaction of training) {
+      popularity.set(
+        interaction.eventId,
+        (popularity.get(interaction.eventId) ?? 0) + 1,
+      );
+    }
+
+    const eventIds = [...model.eventFactors.keys()];
+    let modelHits = 0;
+    let popularityHits = 0;
+
+    for (const target of hidden) {
+      const userTraining = training.filter(
+        (interaction) => interaction.userId === target.userId,
+      );
+      const seen = new Set(userTraining.map((interaction) => interaction.eventId));
+      const candidates = eventIds.filter((eventId) => !seen.has(eventId));
+
+      // Ίδια διαδρομή με τις πραγματικές προτάσεις: fold-in και predict
+      const user = this.foldInUser(model, target.userId, userTraining);
+
+      const byModel = candidates
+        .map((eventId) => ({ eventId, score: this.predict(model, user, eventId) }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, topN)
+        .map((candidate) => candidate.eventId);
+
+      const byPopularity = [...candidates]
+        .sort((a, b) => (popularity.get(b) ?? 0) - (popularity.get(a) ?? 0))
+        .slice(0, topN);
+
+      if (byModel.includes(target.eventId)) {
+        modelHits++;
+      }
+
+      if (byPopularity.includes(target.eventId)) {
+        popularityHits++;
+      }
+    }
+
+    return {
+      users: hidden.length,
+      rmseByEpoch,
+      modelHitRate: modelHits / hidden.length,
+      popularityHitRate: popularityHits / hidden.length,
+      randomHitRate: topN / eventIds.length,
+    };
+  }
+
   private dot(a: number[], b: number[]) {
     return a.reduce((sum, value, index) => sum + value * b[index], 0);
   }
@@ -191,8 +277,10 @@ export class RecommendationsService implements OnModuleInit, OnModuleDestroy {
   }
 
 
-  private trainModel(interactions: Interaction[]): FactorModel {
-
+  private trainModel(
+    interactions: Interaction[],
+    onEpoch?: (epoch: number, rmse: number) => void,
+  ): FactorModel {
     const eventIds = [
       ...new Set(interactions.map((interaction) => interaction.eventId)),
     ];
@@ -239,7 +327,9 @@ export class RecommendationsService implements OnModuleInit, OnModuleDestroy {
         ...interactions,
         ...this.sampleNegatives(seenByUser, eventIds, negativesPerPositive),
       ]);
-        for (const interaction of epochInteractions) {
+      let squaredErrors = 0;
+
+      for (const interaction of epochInteractions) {
         const currentUserBias = userBias.get(interaction.userId) ?? 0;
         const currentEventBias = eventBias.get(interaction.eventId) ?? 0;
         const currentUserFactors = userFactors.get(interaction.userId)!;
@@ -252,6 +342,7 @@ export class RecommendationsService implements OnModuleInit, OnModuleDestroy {
           this.dot(currentUserFactors, currentEventFactors);
 
         const error = interaction.rating - prediction;
+        squaredErrors += error * error;
 
         userBias.set(
           interaction.userId,
@@ -278,6 +369,11 @@ export class RecommendationsService implements OnModuleInit, OnModuleDestroy {
             learningRate * (error * userFactor - regularization * eventFactor);
         }
       }
+
+      onEpoch?.(
+        epoch + 1,
+        Math.sqrt(squaredErrors / epochInteractions.length),
+      );
     }
 
     return {
@@ -289,7 +385,7 @@ export class RecommendationsService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-   private predict(model: FactorModel, user: UserVector, eventId: number) {
+  private predict(model: FactorModel, user: UserVector, eventId: number) {
     const eventBias = model.eventBias.get(eventId) ?? 0;
     const eventFactors = model.eventFactors.get(eventId);
 
@@ -358,7 +454,7 @@ export class RecommendationsService implements OnModuleInit, OnModuleDestroy {
 
 
 
-   // Με userId φέρνει μόνο τις βαθμολογίες αυτού του χρήστη
+  // Με userId φέρνει μόνο τις βαθμολογίες αυτού του χρήστη
   private async loadAppInteractions(userId?: number): Promise<Interaction[]> {
     const bookings = await this.prisma.booking.findMany({
       where: {
@@ -428,6 +524,17 @@ export class RecommendationsService implements OnModuleInit, OnModuleDestroy {
         id: {
           notIn: excludedEventIds,
         },
+        // Όχι γεμάτες: να υπάρχουν θέσεις και διαθέσιμα εισιτήρια
+        reservedSeats: {
+          lt: this.prisma.event.fields.capacity,
+        },
+        ticketTypes: {
+          some: {
+            available: {
+              gt: 0,
+            },
+          },
+        },
       },
       include: {
         organizer: {
@@ -450,7 +557,7 @@ export class RecommendationsService implements OnModuleInit, OnModuleDestroy {
       return [];
     }
 
-        const model = this.model;
+    const model = this.model;
 
     if (!model) {
       return this.fallbackRecommendations(candidateEvents);
