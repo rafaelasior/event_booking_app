@@ -109,7 +109,7 @@ export type CreatePhotoRequest = {
   providedIn: 'root',
 })
 export class Events {
-  private readonly apiUrl = 'http://localhost:3000/events';
+  private readonly apiUrl = 'https://localhost:3000/events';
 
   constructor(private readonly http: HttpClient) {}
 

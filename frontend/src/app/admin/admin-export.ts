@@ -8,7 +8,7 @@ export type ExportFormat = 'xml' | 'json';
   providedIn: 'root',
 })
 export class AdminExport {
-  private readonly apiUrl = 'http://localhost:3000/exports';
+  private readonly apiUrl = 'https://localhost:3000/exports';
 
   constructor(private readonly http: HttpClient) {}
 

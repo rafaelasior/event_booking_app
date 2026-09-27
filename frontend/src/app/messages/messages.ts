@@ -49,7 +49,7 @@ export type AnnouncementRequest = {
   providedIn: 'root',
 })
 export class Messages {
-  private readonly apiUrl = 'http://localhost:3000/messages';
+  private readonly apiUrl = 'https://localhost:3000/messages';
 
   // Πλήθος αδιάβαστων. Το service είναι ένα για όλη την εφαρμογή (providedIn: 'root'),
   // άρα όποιο component διαβάζει αυτό το signal βλέπει την ίδια τιμή.

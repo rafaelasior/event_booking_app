@@ -53,7 +53,7 @@ export type CreateBookingRequest = {
   providedIn: 'root',
 })
 export class Bookings {
-  private readonly apiUrl = 'http://localhost:3000/bookings';
+  private readonly apiUrl = 'https://localhost:3000/bookings';
 
   constructor(private readonly http: HttpClient) {}
 

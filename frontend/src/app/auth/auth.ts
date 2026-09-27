@@ -29,7 +29,7 @@ type RegisterRequest = {
   providedIn: 'root',
 })
 export class Auth {
-  private readonly apiUrl = 'http://localhost:3000/auth';
+  private readonly apiUrl = 'https://localhost:3000/auth';
   private readonly loggedIn = signal(this.getToken() !== null);
 
   constructor(private readonly http: HttpClient) {}

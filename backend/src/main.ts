@@ -3,9 +3,16 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { readFileSync } from 'fs';
+
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // TLS: key/cert από τον φάκελο certs/ στη ρίζα του repo
+  const httpsOptions = {
+    key: readFileSync(join(process.cwd(), '..', 'certs', 'localhost-key.pem')),
+    cert: readFileSync(join(process.cwd(), '..', 'certs', 'localhost.pem')),
+  };
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { httpsOptions });
   // σερβίρει τα ανεβασμένα αρχεία στο http://localhost:3000/uploads/...
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
   
@@ -23,7 +30,7 @@ async function bootstrap() {
 
   //communication between frontend and backend
   app.enableCors({
-    origin: ['http://localhost:4200'],
+    origin: ['https://localhost:4200'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });

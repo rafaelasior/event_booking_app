@@ -29,7 +29,7 @@ export type UserDetails = PublicUser & {
   providedIn: 'root',
 })
 export class AdminUsers {
-  private readonly apiUrl = 'http://localhost:3000/users';
+  private readonly apiUrl = 'https://localhost:3000/users';
 
   constructor(private readonly http: HttpClient) {}
 
