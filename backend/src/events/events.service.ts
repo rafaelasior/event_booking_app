@@ -105,6 +105,20 @@ export class EventsService {
   return ticketTypes.reduce((total, ticketType) => total + ticketType.quantity, 0);
 }
 
+  private async completeFinishedEvents() {
+    await this.prisma.event.updateMany({
+      where: {
+        status: EventStatus.PUBLISHED,
+        endDateTime: {
+          lt: new Date(),
+        },
+      },
+      data: {
+        status: EventStatus.COMPLETED,
+      },
+    });
+  }
+
 // ------------------------------------------------------------------------------------
 //  EVENTS
 // ------------------------------------------------------------------------------------
@@ -135,6 +149,8 @@ export class EventsService {
   }
 
   async findAll(filters: EventFilters = {}) {
+    await this.completeFinishedEvents();
+
     const status = this.parseStatus(filters.status);
     const page = Math.max(Number(filters.page) || 1, 1);
     const limit = Math.min(Math.max(Number(filters.limit) || 0, 0), 50);
@@ -239,6 +255,8 @@ export class EventsService {
 
   // Να επιστρέφει όλα τα events που έχει δημιουργήσει ο τρέχων χρήστης
   async findMine(userId: number) {
+    await this.completeFinishedEvents();
+
     return this.prisma.event.findMany({
       where: {
         organizerId: userId,
@@ -260,6 +278,8 @@ export class EventsService {
 
   // Να επιστρέφει ένα συγκεκριμένο event από τη βάση ή 404 αν δεν υπάρχει
   async findOne(id: number) {
+    await this.completeFinishedEvents();
+
     const event = await this.prisma.event.findUnique({
       where: { id },
       include: {
